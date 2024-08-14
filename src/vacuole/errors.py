@@ -12,3 +12,7 @@ class Error:
 class IllegalCharError(Error):
     def __init__(self, details, error_line, error_char, fn):
         super().__init__('Illegal Character', details, error_line, error_char, fn)
+
+class InvalidSyntaxError(Error):
+    def __init__(self, details, error_line, error_char, fn):
+        super().__init__('Illegal Syntax', details, error_line, error_char, fn)
