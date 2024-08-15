@@ -1,10 +1,16 @@
-from lexer import Lexer
+from vacuole.lexer import Lexer
+from vacuole.parser import Parser
+
+from constants.tokens import *
 
 def run(text):
 
     lexer = Lexer("<stdin>", text)
     tokens, error = lexer.tokenize()
-    return tokens, error
+    if error: return [], error
+    parser = Parser("<stdin>", tokens)
+    ast, error = parser.parse()
+    return ast, error
 
 if __name__ == "__main__":
     while True:
