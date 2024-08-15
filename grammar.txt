@@ -3,3 +3,5 @@ expr: term ((PLUS|MINUS) term)*
 term: fact ((MUL|DIV) fact)*
 
 factor: INT|FLOAT
+        (PLUS|MINUS) factor
+        LPAREN expr RPAREN

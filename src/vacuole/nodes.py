@@ -12,5 +12,10 @@ class BinOpNode:
     def __repr__(self) -> str:
         return f'({self.lnode} {self.op_token} {self.rnode})'
     
+class UnaryOpNode:
+    def __init__(self, op_token, node) -> None:
+        self.op_token = op_token
+        self.node = node
+    def __repr__(self) -> str:
+        return f'({self.op_token} {self.node})'
 
-    

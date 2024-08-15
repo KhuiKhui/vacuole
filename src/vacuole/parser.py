@@ -55,6 +55,21 @@ class Parser:
     def factor(self):
         parseRes = ParseResult()
         token = self.current_token
+        if token.type in (TT_PLUS, TT_MINUS):
+            self.advance()
+            factor = parseRes.register(self.factor())
+            if parseRes.error: return parseRes
+            return parseRes.register(UnaryOpNode(token, factor))
+        if token.type == TT_LPAREN:
+            self.advance()
+            expr = parseRes.register(self.expr())
+            if parseRes.error: return parseRes
+            if self.current_token.type == TT_RPAREN:
+                self.advance()
+                return parseRes.success(expr)
+            else:
+                return parseRes.failure(InvalidSyntaxError("')' expected.", self.current_token.line, self.current_token.end, self.fn))
+
         if token.type in (TT_INT, TT_FLOAT):
             self.advance()
             return parseRes.success(NumberNode(token))
