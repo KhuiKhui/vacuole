@@ -5,7 +5,7 @@ from vacuole.utils.position import *
     
 
 class Token:
-    def __init__ (self, type, value, line, start, end=None) -> None:
+    def __init__ (self, type, value, line, start, end) -> None:
         self.type = type
         self.value = value
         self.start = start
@@ -55,27 +55,30 @@ class Lexer:
             elif self.current_char in DIGITS:
                 tokens.append(self.processDigits())
             elif self.current_char == "+":
-                tokens.append(Token(TT_PLUS, "+", self.pos.line, self.pos.char))
+                tokens.append(Token(TT_PLUS, "+", self.pos.line, self.pos.char-len(self.current_char), self.pos.char))
                 self.advance()
             elif self.current_char == "-":
-                tokens.append(Token(TT_MINUS, "-", self.pos.line, self.pos.char))
+                tokens.append(Token(TT_MINUS, "-", self.pos.line, self.pos.char-len(self.current_char), self.pos.char))
                 self.advance()
             elif self.current_char == "*":
-                tokens.append(Token(TT_MUL, "*", self.pos.line, self.pos.char))
+                tokens.append(Token(TT_MUL, "*", self.pos.line, self.pos.char-len(self.current_char), self.pos.char))
                 self.advance()
             elif self.current_char == "/":
-                tokens.append(Token(TT_DIV, "/", self.pos.line, self.pos.char))
+                tokens.append(Token(TT_DIV, "/", self.pos.line, self.pos.char-len(self.current_char), self.pos.char))
                 self.advance()
+            # elif self.current_char + self.text[self.pos + 1] == "**":
+            #     tokens.append(Token(TT_POWER, "**", self.pos.line, self.pos.char-len(self.current_char), self.pos.char))
+            #     self.advance()
             elif self.current_char == "(":
-                tokens.append(Token(TT_LPAREN, "(", self.pos.line, self.pos.char))
+                tokens.append(Token(TT_LPAREN, "(", self.pos.line, self.pos.char-len(self.current_char), self.pos.char))
                 self.advance()
             elif self.current_char == ")":
-                tokens.append(Token(TT_RPAREN, ")", self.pos.line, self.pos.char))
+                tokens.append(Token(TT_RPAREN, ")", self.pos.line, self.pos.char-len(self.current_char), self.pos.char))
                 self.advance()
             else:
                 error_char = self.current_char
                 self.advance()
                 return [], IllegalCharError(error_char, self.pos.line, self.pos.char, self.fn)
-        tokens.append(Token(TT_EOF, "EOF", self.pos.line, self.pos.char))
+        tokens.append(Token(TT_EOF, "EOF", self.pos.line, self.pos.char, self.pos.char))
         return tokens, None
         

@@ -39,7 +39,7 @@ class Parser:
         if parseRes.error: return parseRes
         
         while self.current_token.type in ops:
-            op = self.current_token.type
+            op = self.current_token
             self.advance()
             right = parseRes.register(func())
             if parseRes.error: return parseRes
@@ -47,10 +47,10 @@ class Parser:
         return left
 
     def expr(self):
-        return self.bin_op(self.term, (TT_PLUS, TT_MINUS))
+        return self.bin_op(self.term, (TT_PLUS, TT_MINUS, TT_POWER))
 
     def term(self):
-        return self.bin_op(self.factor, (TT_MUL, TT_DIV))
+        return self.bin_op(self.factor, (TT_MUL, TT_DIV, TT_POWER))
     
     def factor(self):
         parseRes = ParseResult()

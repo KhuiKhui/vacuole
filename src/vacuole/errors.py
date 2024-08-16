@@ -16,3 +16,7 @@ class IllegalCharError(Error):
 class InvalidSyntaxError(Error):
     def __init__(self, details, error_line, error_char, fn):
         super().__init__('Illegal Syntax', details, error_line, error_char, fn)
+
+class RuntimeError(Error):
+    def __init__(self, details, error_line, error_char, fn):
+        super().__init__('Runtime Error', details, error_line, error_char, fn)
