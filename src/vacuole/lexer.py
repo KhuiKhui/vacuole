@@ -56,14 +56,18 @@ class Lexer:
                 tokens.append(Token(TT_MINUS, "-", self.pos))
                 self.advance()
             elif self.current_char == "*":
+                if self.pos.char < len(self.text)-1:
+                    if self.text[self.pos.char + 1] == "*":
+                        tokens.append(Token(TT_POWER, "**", self.pos))
+                        self.advance()
+                        self.advance()
+                        continue
                 tokens.append(Token(TT_MUL, "*", self.pos))
                 self.advance()
             elif self.current_char == "/":
                 tokens.append(Token(TT_DIV, "/", self.pos))
                 self.advance()
-            # elif self.current_char + self.text[self.pos + 1] == "**":
-            #     tokens.append(Token(TT_POWER, "**", self.pos))
-            #     self.advance()
+
             elif self.current_char == "(":
                 tokens.append(Token(TT_LPAREN, "(", self.pos))
                 self.advance()

@@ -32,11 +32,9 @@ class Interpreter:
     def visit_NumberNode(self, node):
         rt = RuntimeResult()
         number = Number(node.token.value)
-        #number.set_pos(node.token.start, node.token.end)
         return rt.success(number)
     
     def visit_BinOpNode(self, node):
-        print("Found binary op node!")
         rt = RuntimeResult()
         lvalue = rt.register(self.visit(node.lnode))
         if rt.error: return rt
@@ -55,9 +53,7 @@ class Interpreter:
         if node.op_token.type == TT_POWER:
             result = lvalue.raise_power(rvalue)
         return rt.success(result)
-        #return result.set_pos(node.lnode.token.start, node.lnode.token.end)
     def visit_UnaryOpNode(self, node):
-        print("Found unary op node!")
         rt = RuntimeResult()
         value = rt.register(self.visit(node.node))
         if node.op_token.type == TT_PLUS:
@@ -65,4 +61,3 @@ class Interpreter:
         if node.op_token.type == TT_MINUS:
             result = value.mul_by(Number(-1))
         return rt.success(result)
-        #return result.set_pos(node.node.token.start, node.node.token.end)

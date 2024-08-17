@@ -17,7 +17,7 @@ class Number:
     def div_by(self, other):
         if isinstance(other, Number):
             return Number(self.number / other.number)
-    def power_raise(self, other):
+    def raise_power(self, other):
         if isinstance(other, Number):
             return Number(self.number ** other.number)
         
