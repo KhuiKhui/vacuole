@@ -1,6 +1,8 @@
 expr: term ((PLUS|MINUS) term)*
+      term POWER term
 
 term: fact ((MUL|DIV) fact)*
+      fact POWER fact
 
 factor: INT|FLOAT
         (PLUS|MINUS) factor
