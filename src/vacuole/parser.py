@@ -25,9 +25,8 @@ class Parser:
     def __init__(self, fn, tokens) -> None:
         self.fn = fn
         self.tokens = tokens
-        self.pos = -1
-        self.current_token = None
-        self.advance()
+        self.pos = 0
+        self.current_token = self.tokens[self.pos]
 
     def advance(self):
         self.pos += 1
@@ -39,11 +38,13 @@ class Parser:
         if parseRes.error: return parseRes
         
         while self.current_token.type in ops:
+            left = parseRes.register(left)
             op = self.current_token
             self.advance()
             right = parseRes.register(func())
             if parseRes.error: return parseRes
             left = parseRes.success(BinOpNode(left, op, right))
+
         return left
 
     def expr(self):
@@ -68,18 +69,18 @@ class Parser:
                 self.advance()
                 return parseRes.success(expr)
             else:
-                return parseRes.failure(InvalidSyntaxError("')' expected.", self.current_token.line, self.current_token.end, self.fn))
+                return parseRes.failure(InvalidSyntaxError("')' expected.", self.current_token.pos))
 
         if token.type in (TT_INT, TT_FLOAT):
             self.advance()
             return parseRes.success(NumberNode(token))
-        return parseRes.failure(IllegalCharError("Must be type integer or float.", self.current_token.line, self.current_token.end, self.fn))
+        return parseRes.failure(IllegalCharError("Must be type integer or float.", self.current_token.pos))
         
     def parse(self):
         parseRes = ParseResult()
         res = parseRes.register(self.expr())
         error = parseRes.error
         if not error and self.current_token.type != TT_EOF:
-            error = InvalidSyntaxError("Expression with missing terms found.", self.current_token.line, self.current_token.end, self.fn)
+            error = InvalidSyntaxError("Expression with missing terms found.", self.current_token.pos)
 
         return res, error

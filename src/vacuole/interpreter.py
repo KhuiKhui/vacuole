@@ -50,7 +50,7 @@ class Interpreter:
             result = lvalue.mul_by(rvalue)
         if node.op_token.type == TT_DIV:
             if rvalue.number == 0:
-                return rt.failure(RuntimeError("Division by zero", node.op_token.line, node.rnode.token.end, self.fn))
+                return rt.failure(RuntimeError("Division by zero", node.op_token.pos))
             result = lvalue.div_by(rvalue)
         if node.op_token.type == TT_POWER:
             result = lvalue.raise_power(rvalue)

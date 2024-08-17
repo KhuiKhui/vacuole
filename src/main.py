@@ -10,11 +10,13 @@ def run(text):
     lexer = Lexer(fn, text)
     tokens, error = lexer.tokenize()
     if error: return None, error
+    print(tokens)
 
     # Parser
     parser = Parser(fn, tokens)
     ast, error = parser.parse()
     if error: return None, error
+    print(ast)
 
     # Interpreter
     interpreter = Interpreter(fn)
