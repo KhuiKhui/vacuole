@@ -34,7 +34,6 @@ class Parser:
 
     def var_assign(self, keyword, identifier, value):
         parseRes = ParseResult()
-        self.advance()
         return parseRes.success(VarAssignNode(keyword, identifier, value))
     
     def var_access(self, token):
@@ -68,7 +67,9 @@ class Parser:
             if self.current_token.type != TT_EQ:
                 return parseRes.failure(InvalidSyntaxError("'=' expected.", self.current_token.pos))
             self.advance()
+            print("start: ", self.current_token.type)
             expr = parseRes.register(self.expr())
+            print("end: ", self.current_token.type)
             if parseRes.error: return parseRes
             return self.var_assign(keyword, var_name, expr)
 
@@ -85,15 +86,18 @@ class Parser:
             token_identifier = self.current_token
             self.advance()
             return self.var_access(token_identifier)
-        if token.type in (TT_PLUS, TT_MINUS):
+        if token.type in (TT_PLUS, TT_MINUS): 
             self.advance()
             factor = parseRes.register(self.factor())
             if parseRes.error: return parseRes
             return parseRes.register(UnaryOpNode(token, factor))
         if token.type == TT_LPAREN:
             self.advance()
+            print(self.current_token.type)
+
             expr = parseRes.register(self.expr())
             if parseRes.error: return parseRes
+            print(self.current_token.type)
             if self.current_token.type == TT_RPAREN:
                 self.advance()
                 return parseRes.success(expr)
@@ -102,6 +106,7 @@ class Parser:
 
         if token.type in (TT_INT, TT_FLOAT):
             self.advance()
+            print(self.current_token.type)
             return parseRes.success(NumberNode(token))
         return parseRes.failure(InvalidSyntaxError(f"Must be type integer or float, not '{self.current_token.value}'", self.current_token.pos))
         
