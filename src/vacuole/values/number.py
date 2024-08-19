@@ -20,6 +20,9 @@ class Number:
     def raise_power(self, other):
         if isinstance(other, Number):
             return Number(self.number ** other.number)
+    def mod(self, other):
+        if isinstance(other, Number):
+            return Number(self.number % other.number)
         
     def __repr__(self) -> str:
         return str(self.number)

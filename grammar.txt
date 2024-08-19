@@ -1,4 +1,5 @@
-expr: term ((PLUS|MINUS) term)*
+expr: KEYWORD IDENTIFIER EQ expr
+      term ((PLUS|MINUS) term)*
       term POWER term
 
 term: fact ((MUL|DIV) fact)*
@@ -7,3 +8,4 @@ term: fact ((MUL|DIV) fact)*
 factor: INT|FLOAT
         (PLUS|MINUS) factor
         LPAREN expr RPAREN
+        IDENTIFIER

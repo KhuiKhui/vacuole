@@ -1,3 +1,17 @@
+class VarAssignNode:
+    def __init__(self, keyword, identifier, node) -> None:
+        self.keyword = keyword
+        self.identifier = identifier
+        self.node = node
+    def __repr__(self) -> str:
+        return f'{self.keyword} {self.identifier} = {self.node}'
+    
+class VarAccessNode:
+    def __init__(self, token) -> None:
+        self.token = token
+    def __repr__(self) -> str:
+        return f'{self.token}'
+
 class NumberNode:
     def __init__(self, token) -> None:
         self.token = token

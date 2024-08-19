@@ -12,6 +12,9 @@ class Token:
         
     def __repr__(self) -> str:
         return f"{self.type}:{self.value}"
+    
+    def matches(self, type, value):
+        return self.type == type and self.value == value
 
 
 class Lexer:
@@ -40,15 +43,25 @@ class Lexer:
             return Token(TT_INT, int(number), self.pos)
         else:
             return Token(TT_FLOAT, float(number), self.pos)
+    def processVariables(self):
+        id_str = ""
+        while self.current_char != None and self.current_char in DIGITS_AND_LETTERS + "_":
+            id_str += self.current_char
+            self.advance()
+        
+        token_type = TT_KEYWORD if id_str in KEYWORDS else TT_IDENTIFIER
+        return Token(token_type, id_str, self.pos)
 
 
     def tokenize(self):
         tokens = []
         while self.current_char != None:
-            if self.current_char in " \t":
+            if self.current_char in " \n\t":
                 self.advance()
             elif self.current_char in DIGITS:
                 tokens.append(self.processDigits())
+            elif self.current_char in LETTERS:
+                tokens.append(self.processVariables())
             elif self.current_char == "+":
                 tokens.append(Token(TT_PLUS, "+", self.pos))
                 self.advance()
@@ -67,12 +80,18 @@ class Lexer:
             elif self.current_char == "/":
                 tokens.append(Token(TT_DIV, "/", self.pos))
                 self.advance()
+            elif self.current_char == "%":
+                tokens.append(Token(TT_MOD, "%", self.pos))
+                self.advance()
 
             elif self.current_char == "(":
                 tokens.append(Token(TT_LPAREN, "(", self.pos))
                 self.advance()
             elif self.current_char == ")":
                 tokens.append(Token(TT_RPAREN, ")", self.pos))
+                self.advance()
+            elif self.current_char == "=":
+                tokens.append(Token(TT_EQ, "=", self.pos))
                 self.advance()
             else:
                 error_char = self.current_char

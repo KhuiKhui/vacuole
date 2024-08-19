@@ -1,4 +1,6 @@
-## Token types
+#####  TOKEN TYPES  #####
+
+##  MATH TOKENS  ##
 
 TT_INT = "INT"
 TT_FLOAT = "FLOAT"
@@ -7,6 +9,16 @@ TT_MINUS = "MINUS"
 TT_MUL = "MUL"
 TT_DIV = "DIV"
 TT_POWER = "POWER"
+TT_MOD = "MOD"
 TT_LPAREN = "LPAREN"
 TT_RPAREN = "RPAREN"
+
+##  VARIABLE TOKENS  ##
+
+TT_IDENTIFIER = "IDENTIFIER"
+TT_KEYWORD = "KEYWORD"
+TT_EQ = "EQ"
+
+##  MISC TOKENS ##
+
 TT_EOF = "EOF"

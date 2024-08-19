@@ -31,12 +31,20 @@ class Parser:
     def advance(self):
         self.pos += 1
         self.current_token = self.tokens[self.pos] if self.pos < len(self.tokens) else self.current_token
+
+    def var_assign(self, keyword, identifier, value):
+        parseRes = ParseResult()
+        self.advance()
+        return parseRes.success(VarAssignNode(keyword, identifier, value))
+    
+    def var_access(self, token):
+        parseRes = ParseResult()
+        return parseRes.success(VarAccessNode(token))
     
     def bin_op(self, func, ops):
         parseRes = ParseResult()
         left = parseRes.register(func())
         if parseRes.error: return parseRes
-        
         while self.current_token.type in ops:
             left = parseRes.register(left)
             op = self.current_token
@@ -48,14 +56,35 @@ class Parser:
         return left
 
     def expr(self):
-        return self.bin_op(self.term, (TT_PLUS, TT_MINUS, TT_POWER))
+        parseRes = ParseResult()
+        if self.current_token.matches(TT_KEYWORD, "var"):
+            keyword = self.current_token.value
+            self.advance()
+            parseRes.register(self.current_token)
+            if self.current_token.type != TT_IDENTIFIER:
+                return parseRes.failure(InvalidSyntaxError("Identifier expected.", self.current_token.pos))
+            var_name = self.current_token.value
+            self.advance()
+            if self.current_token.type != TT_EQ:
+                return parseRes.failure(InvalidSyntaxError("'=' expected.", self.current_token.pos))
+            self.advance()
+            expr = parseRes.register(self.expr())
+            if parseRes.error: return parseRes
+            return self.var_assign(keyword, var_name, expr)
+
+        else:
+            return self.bin_op(self.term, (TT_PLUS, TT_MINUS, TT_POWER))
 
     def term(self):
-        return self.bin_op(self.factor, (TT_MUL, TT_DIV, TT_POWER))
+        return self.bin_op(self.factor, (TT_MUL, TT_DIV, TT_MOD, TT_POWER))
     
     def factor(self):
         parseRes = ParseResult()
         token = self.current_token
+        if token.type == TT_IDENTIFIER:
+            token_identifier = self.current_token
+            self.advance()
+            return self.var_access(token_identifier)
         if token.type in (TT_PLUS, TT_MINUS):
             self.advance()
             factor = parseRes.register(self.factor())
@@ -74,7 +103,7 @@ class Parser:
         if token.type in (TT_INT, TT_FLOAT):
             self.advance()
             return parseRes.success(NumberNode(token))
-        return parseRes.failure(IllegalCharError("Must be type integer or float.", self.current_token.pos))
+        return parseRes.failure(InvalidSyntaxError(f"Must be type integer or float, not '{self.current_token.value}'", self.current_token.pos))
         
     def parse(self):
         parseRes = ParseResult()
