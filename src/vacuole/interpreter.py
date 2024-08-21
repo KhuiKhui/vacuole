@@ -14,6 +14,11 @@ class SymbolTable:
         return value
     def set(self, keyword, identifier, value):
         self.symbols[identifier] = SymbolTableEntry(keyword, identifier, value)
+    def update(self, identifier, value):
+        get_value = self.symbols.get(identifier, None)
+        if get_value == None: return None
+        self.symbols[identifier].updateEntry(value)
+        return value
     def setDefaultValues(self):
         self.set("true", "true", Number(1))
         self.set("false", "false", Number(0))
@@ -23,6 +28,8 @@ class SymbolTableEntry:
         self.keyword = keyword
         self.identifier = identifier
         self.value = value
+    def updateEntry(self, new_value):
+        self.value = new_value
     
 
 class RuntimeResult:
@@ -57,14 +64,23 @@ class Interpreter:
         rt = RuntimeResult()
         value = rt.register(self.visit(node.node))
         if rt.error: return rt
-        self.symbol_table.set(node.keyword, node.identifier, value)
+        self.symbol_table.set(node.keyword, node.identifier_token.value, value)
+        return rt.success(value)
+    
+    def visit_VarUpdateNode(self, node):
+        rt = RuntimeResult()
+        value = rt.register(self.visit(node.node))
+        if rt.error: return rt
+        if self.symbol_table.get(node.identifier_token.value) == None:
+            return rt.failure(RuntimeError(f'{node.identifier_token.value} is not defined.', node.identifier_token.pos))
+        self.symbol_table.update(node.identifier_token.value, value)
         return rt.success(value)
     
     def visit_VarAccessNode(self, node):
         rt = RuntimeResult()
-        var_value_entry = self.symbol_table.get(node.token.value)
+        var_value_entry = self.symbol_table.get(node.identifier_token.value)
         if var_value_entry == None:
-            return rt.failure(RuntimeError(f'{node.token.value} is not defined.', node.token.pos))
+            return rt.failure(RuntimeError(f'{node.identifier_token.value} is not defined.', node.identifier_token.pos))
         return rt.success(var_value_entry.value)
 
     def visit_NumberNode(self, node):

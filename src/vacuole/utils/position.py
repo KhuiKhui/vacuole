@@ -8,3 +8,5 @@ class Position:
         if current_char == "\n":
             self.char = 0
             self.line += 1
+    def copy(self):
+        return Position(self.fn, self.line, self.char)

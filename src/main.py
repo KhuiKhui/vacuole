@@ -10,7 +10,7 @@ def run(text, line_number, symbol_table):
     lexer = Lexer(fn, text, line_number)
     tokens, error = lexer.tokenize()
     if error: return None, error
-    print("Tokens: ", tokens)
+    print("Tokens: ", tokens, tokens[0])
 
     # Parser
     parser = Parser(fn, tokens)
@@ -23,18 +23,30 @@ def run(text, line_number, symbol_table):
     output = interpreter.visit(ast)
     return output.result, output.error
 
-if __name__ == "__main__":
-    text = []
-    with open("input.txt", "r") as f:
-        text = f.read().strip("\n").split("\n")
-        text = [i for i in text if i != '']
+# if __name__ == "__main__":
+#     text = []
+#     with open("input.txt", "r") as f:
+#         text = f.read().strip("\n").split("\n")
+#         text = [i for i in text if i != '']
     
+#     symbol_table = SymbolTable()
+#     symbol_table.setDefaultValues()
+    
+#     for i in range(len(text)):
+#         result, error = run(text[i], i+1, symbol_table)
+
+#         if error:
+#             print(error)
+#         else:
+#             print(result)
+
+if __name__ == "__main__":
     symbol_table = SymbolTable()
     symbol_table.setDefaultValues()
     
-    for i in range(len(text)):
-        # text = input("vacuole > ")
-        result, error = run(text[i], i+1, symbol_table)
+    while True:
+        text = input("vacuole > ")
+        result, error = run(text, 1, symbol_table)
 
         if error:
             print(error)

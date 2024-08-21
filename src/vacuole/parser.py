@@ -20,7 +20,6 @@ class ParseResult:
         self.error = error
         return self
 
-
 class Parser:
 
     def __init__(self, fn, tokens) -> None:
@@ -33,44 +32,24 @@ class Parser:
         self.pos += 1
         self.current_token = self.tokens[self.pos] if self.pos < len(self.tokens) else self.current_token
 
-    # add var_update function
+    def parse(self):
+        parseRes = ParseResult()
+        res = parseRes.register(self.expr())
+        error = parseRes.error
+        if not error and self.current_token.type != TT_EOF:
+            error = InvalidSyntaxError("Expression with missing terms found.", self.current_token.pos)
 
-    def var_assign(self):
-        parseRes = ParseResult()
-        keyword = self.current_token.value
-        self.advance()
-        parseRes.register(self.current_token)
-        if self.current_token.type != TT_IDENTIFIER:
-            return parseRes.failure(InvalidSyntaxError("Identifier expected.", self.current_token.pos))
-        if self.current_token.value in CONSTANTS:
-            return parseRes.failure(IllegalCharError("Keyword used as identifier.", self.current_token.pos))
-        identifier = self.current_token.value
-        self.advance()
-        if self.current_token.type != TT_EQ:
-            return parseRes.failure(InvalidSyntaxError("'=' expected.", self.current_token.pos))
-        self.advance()
-        expr = parseRes.register(self.expr())
-        if parseRes.error: return parseRes
-        return parseRes.success(VarAssignNode(keyword, identifier, expr))
-    
-    def var_access(self, token):
-        parseRes = ParseResult()
-        return parseRes.success(VarAccessNode(token))
-    
-    def comp_expr(self):
-        parseRes = ParseResult()
-        if self.current_token.type == TT_NOT:
-            op_token = self.current_token
-            self.advance()
-            node = parseRes.register(self.comp_expr())
-            return UnaryOpNode(op_token, node)
-        node = parseRes.register(self.bin_op(self.arith_expr, COMP_OPS))
-        if parseRes.error: return parseRes
-        return node
-    
-    def arith_expr(self):
-        return self.bin_op(self.term, (TT_PLUS, TT_MINUS, TT_POWER))
+        return res, error
 
+    def expr(self):
+        parseRes = ParseResult()
+        if self.current_token.value in TYPES:
+            return self.var_assign()
+        elif self.current_token.type == TT_IDENTIFIER:
+            return self.var_update()
+        
+        return self.bin_op(self.comp_expr, (TT_AND, TT_OR, TT_BIT_AND, TT_BIT_OR))
+        
     def bin_op(self, func, ops):
         parseRes = ParseResult()
         left = parseRes.register(func())
@@ -84,15 +63,20 @@ class Parser:
             left = parseRes.success(BinOpNode(left, op, right))
 
         return left
-    
 
-    def expr(self):
+    def comp_expr(self):
         parseRes = ParseResult()
-        if self.current_token.value in TYPES:
-            return self.var_assign()
-
-        else:
-            return self.bin_op(self.comp_expr, (TT_AND, TT_OR, TT_BIT_AND, TT_BIT_OR))
+        if self.current_token.type == TT_NOT:
+            op_token = self.current_token
+            self.advance()
+            node = parseRes.register(self.comp_expr())
+            return UnaryOpNode(op_token, node)
+        node = parseRes.register(self.bin_op(self.arith_expr, COMP_OPS))
+        if parseRes.error: return parseRes
+        return node
+    
+    def arith_expr(self):
+        return self.bin_op(self.term, (TT_PLUS, TT_MINUS, TT_POWER))
 
     def term(self):
         return self.bin_op(self.factor, (TT_MUL, TT_DIV, TT_MOD, TT_POWER))
@@ -127,12 +111,43 @@ class Parser:
             return parseRes.failure(InvalidSyntaxError(f"Expression with missing terms found.", self.current_token.pos))
 
         return parseRes.failure(InvalidSyntaxError(f"Must be type integer or float, not '{self.current_token.value}'", self.current_token.pos))
-        
-    def parse(self):
-        parseRes = ParseResult()
-        res = parseRes.register(self.expr())
-        error = parseRes.error
-        if not error and self.current_token.type != TT_EOF:
-            error = InvalidSyntaxError("Expression with missing terms found.", self.current_token.pos)
 
-        return res, error
+    def var_update(self):
+        parseRes = ParseResult()
+        
+        identifier_token = self.current_token
+        
+        if self.pos < len(self.tokens) - 1:
+            if self.tokens[self.pos + 1].type == TT_EQ:
+                self.advance()
+                self.advance()
+                expr = parseRes.register(self.expr())
+                if parseRes.error: return parseRes
+                return parseRes.success(VarUpdateNode(identifier_token, expr))
+            
+        return self.bin_op(self.comp_expr, (TT_AND, TT_OR, TT_BIT_AND, TT_BIT_OR))
+
+    def var_assign(self):
+        parseRes = ParseResult()
+        keyword = self.current_token.value
+        self.advance()
+        parseRes.register(self.current_token)
+        if self.current_token.type != TT_IDENTIFIER:
+            return parseRes.failure(InvalidSyntaxError("Identifier expected.", self.current_token.pos))
+        if self.current_token.value in CONSTANTS:
+            return parseRes.failure(IllegalCharError("Keyword used as identifier.", self.current_token.pos))
+        identifier_token = self.current_token
+        self.advance()
+        if self.current_token.type != TT_EQ:
+            return parseRes.failure(InvalidSyntaxError("'=' expected.", self.current_token.pos))
+        self.advance()
+        expr = parseRes.register(self.expr())
+        if parseRes.error: return parseRes
+        return parseRes.success(VarAssignNode(keyword, identifier_token, expr))
+    
+    def var_access(self, identifier_token):
+        parseRes = ParseResult()
+        return parseRes.success(VarAccessNode(identifier_token))
+    
+    
+    

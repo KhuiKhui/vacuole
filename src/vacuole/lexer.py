@@ -8,14 +8,13 @@ class Token:
     def __init__ (self, type, value, pos) -> None:
         self.type = type
         self.value = value
-        self.pos = pos
+        self.pos = pos.copy()
         
     def __repr__(self) -> str:
         return f"{self.type}:{self.value}"
     
     def matches(self, type, value):
         return self.type == type and self.value == value
-
 
 class Lexer:
     def __init__(self, fn, text, line_number):
@@ -38,11 +37,11 @@ class Lexer:
             else:
                 number += self.current_char
             self.advance()
-        
         if dot_count == 0:
             return Token(TT_INT, int(number), self.pos)
         else:
             return Token(TT_FLOAT, float(number), self.pos)
+        
     def processVariables(self):
         id_str = ""
         while self.current_char != None and self.current_char in DIGITS_AND_LETTERS + "_":
@@ -62,6 +61,7 @@ class Lexer:
                 tokens.append(self.processDigits())
             elif self.current_char in LETTERS + "_":
                 tokens.append(self.processVariables())
+                
             elif self.current_char == ">":
                 if self.pos.char < len(self.text)-1:
                     if self.text[self.pos.char + 1] == "=":
