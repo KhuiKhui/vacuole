@@ -1,6 +1,11 @@
 expr: KEYWORD IDENTIFIER EQ expr
-      term ((PLUS|MINUS) term)*
-      term POWER term
+    : comp_expr ((AND | OR) comp_expr)
+      
+comp_expr: NOT comp_expr
+           arithmetic_expr ((COMPARISON_OP) arithmetic_expr)
+
+arithmetic_expr: term ((PLUS|MINUS) term)*
+                 term POWER term
 
 term: fact ((MUL|DIV) fact)*
       fact POWER fact

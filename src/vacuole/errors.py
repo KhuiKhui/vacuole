@@ -13,7 +13,7 @@ class IllegalCharError(Error):
 
 class InvalidSyntaxError(Error):
     def __init__(self, details, pos):
-        super().__init__('Illegal Syntax', details, pos)
+        super().__init__('Invalid Syntax', details, pos)
 
 class RuntimeError(Error):
     def __init__(self, details, pos):

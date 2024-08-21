@@ -60,8 +60,26 @@ class Lexer:
                 self.advance()
             elif self.current_char in DIGITS:
                 tokens.append(self.processDigits())
-            elif self.current_char in LETTERS:
+            elif self.current_char in LETTERS + "_":
                 tokens.append(self.processVariables())
+            elif self.current_char == ">":
+                if self.pos.char < len(self.text)-1:
+                    if self.text[self.pos.char + 1] == "=":
+                        tokens.append(Token(TT_GREATER_OR_EQ_TO, ">=", self.pos))
+                        self.advance()
+                        self.advance()
+                        continue
+                tokens.append(Token(TT_GREATER_THAN, ">", self.pos))
+                self.advance()
+            elif self.current_char == "<":
+                if self.pos.char < len(self.text)-1:
+                    if self.text[self.pos.char + 1] == "=":
+                        tokens.append(Token(TT_LESS_OR_EQ_TO, "<=", self.pos))
+                        self.advance()
+                        self.advance()
+                        continue
+                tokens.append(Token(TT_LESS_THAN, "<", self.pos))
+                self.advance()
             elif self.current_char == "+":
                 tokens.append(Token(TT_PLUS, "+", self.pos))
                 self.advance()
@@ -83,7 +101,6 @@ class Lexer:
             elif self.current_char == "%":
                 tokens.append(Token(TT_MOD, "%", self.pos))
                 self.advance()
-
             elif self.current_char == "(":
                 tokens.append(Token(TT_LPAREN, "(", self.pos))
                 self.advance()
@@ -91,8 +108,43 @@ class Lexer:
                 tokens.append(Token(TT_RPAREN, ")", self.pos))
                 self.advance()
             elif self.current_char == "=":
+                if self.pos.char < len(self.text)-1:
+                    if self.text[self.pos.char + 1] == "=":
+                        tokens.append(Token(TT_EQ_TO, "==", self.pos))
+                        self.advance()
+                        self.advance()
+                        continue
                 tokens.append(Token(TT_EQ, "=", self.pos))
                 self.advance()
+            elif self.current_char == "!":
+                if self.pos.char < len(self.text)-1:
+                    if self.text[self.pos.char + 1] == "=":
+                        tokens.append(Token(TT_NOT_EQ_TO, "!=", self.pos))
+                        self.advance()
+                        self.advance()
+                        continue
+                tokens.append(Token(TT_NOT, "!", self.pos))
+                self.advance()
+            elif self.current_char == "&":
+                if self.pos.char < len(self.text)-1:
+                    if self.text[self.pos.char + 1] == "&":
+                        tokens.append(Token(TT_AND, "&&", self.pos))
+                        self.advance()
+                        self.advance()
+                        continue
+                error_char = self.current_char
+                self.advance()
+                return [], IllegalCharError(error_char, self.pos)
+            elif self.current_char == "|":
+                if self.pos.char < len(self.text)-1:
+                    if self.text[self.pos.char + 1] == "|":
+                        tokens.append(Token(TT_OR, "||", self.pos))
+                        self.advance()
+                        self.advance()
+                        continue
+                error_char = self.current_char
+                self.advance()
+                return [], IllegalCharError(error_char, self.pos)
             else:
                 error_char = self.current_char
                 self.advance()

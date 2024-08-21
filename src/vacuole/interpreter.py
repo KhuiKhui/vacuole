@@ -14,7 +14,6 @@ class SymbolTable:
         return value
     def set(self, keyword, identifier, value):
         self.symbols[identifier] = SymbolTableEntry(keyword, identifier, value)
-
 class SymbolTableEntry:
     def __init__(self, keyword, identifier, value) -> None:
         self.keyword = keyword
@@ -89,6 +88,22 @@ class Interpreter:
             result = lvalue.raise_power(rvalue)
         elif node.op_token.type == TT_MOD:
             result = lvalue.mod(rvalue)
+        elif node.op_token.type == TT_GREATER_THAN:
+            result = lvalue.is_greater_than(rvalue)
+        elif node.op_token.type == TT_GREATER_OR_EQ_TO:
+            result = lvalue.is_greater_or_eq_to(rvalue)
+        elif node.op_token.type == TT_LESS_THAN:
+            result = lvalue.is_less_than(rvalue)
+        elif node.op_token.type == TT_LESS_OR_EQ_TO:
+            result = lvalue.is_less_or_eq_to(rvalue)
+        elif node.op_token.type == TT_EQ_TO:
+            result = lvalue.is_eq_to(rvalue)
+        elif node.op_token.type == TT_NOT_EQ_TO:
+            result = lvalue.is_not_eq_to(rvalue)
+        elif node.op_token.type == TT_AND:
+            result = lvalue.and_with(rvalue)
+        elif node.op_token.type == TT_OR:
+            result = lvalue.or_with(rvalue)
         
         return rt.success(result)
     def visit_UnaryOpNode(self, node):
@@ -98,4 +113,6 @@ class Interpreter:
             result = value
         if node.op_token.type == TT_MINUS:
             result = value.mul_by(Number(-1))
+        if node.op_token.type == TT_NOT:
+            result = value.not_op()
         return rt.success(result)
