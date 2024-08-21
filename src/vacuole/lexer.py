@@ -18,10 +18,10 @@ class Token:
 
 
 class Lexer:
-    def __init__(self, fn, text):
+    def __init__(self, fn, text, line_number):
         self.fn = fn
         self.text = text
-        self.pos = Position(fn, 1, 0)
+        self.pos = Position(fn, line_number, 0)
         self.current_char = self.text[0]
         
     def advance(self):

@@ -33,6 +33,8 @@ class Parser:
         self.pos += 1
         self.current_token = self.tokens[self.pos] if self.pos < len(self.tokens) else self.current_token
 
+    # add var_update function
+
     def var_assign(self):
         parseRes = ParseResult()
         keyword = self.current_token.value
@@ -40,6 +42,8 @@ class Parser:
         parseRes.register(self.current_token)
         if self.current_token.type != TT_IDENTIFIER:
             return parseRes.failure(InvalidSyntaxError("Identifier expected.", self.current_token.pos))
+        if self.current_token.value in CONSTANTS:
+            return parseRes.failure(IllegalCharError("Keyword used as identifier.", self.current_token.pos))
         identifier = self.current_token.value
         self.advance()
         if self.current_token.type != TT_EQ:
@@ -107,11 +111,8 @@ class Parser:
             return parseRes.register(UnaryOpNode(token, factor))
         if token.type == TT_LPAREN:
             self.advance()
-            print(self.current_token.type)
-
             expr = parseRes.register(self.expr())
             if parseRes.error: return parseRes
-            print(self.current_token.type)
             if self.current_token.type == TT_RPAREN:
                 self.advance()
                 return parseRes.success(expr)
@@ -120,11 +121,10 @@ class Parser:
 
         if token.type in (TT_INT, TT_FLOAT):
             self.advance()
-            print(self.current_token.type)
             return parseRes.success(NumberNode(token))
         
         if self.current_token.type == TT_EOF:
-            return parseRes.failure(InvalidSyntaxError(f"Missing expression.", self.current_token.pos))
+            return parseRes.failure(InvalidSyntaxError(f"Expression with missing terms found.", self.current_token.pos))
 
         return parseRes.failure(InvalidSyntaxError(f"Must be type integer or float, not '{self.current_token.value}'", self.current_token.pos))
         
