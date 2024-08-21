@@ -86,10 +86,7 @@ class Parser:
         parseRes = ParseResult()
         if self.current_token.value in TYPES:
             return self.var_assign()
-        elif self.current_token.value in CONSTANTS:
-            var_token = self.current_token
-            self.advance()
-            return self.var_access(var_token)
+
         else:
             return self.bin_op(self.comp_expr, (TT_AND, TT_OR, TT_BIT_AND, TT_BIT_OR))
 

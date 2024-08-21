@@ -15,9 +15,9 @@ class SymbolTable:
     def set(self, keyword, identifier, value):
         self.symbols[identifier] = SymbolTableEntry(keyword, identifier, value)
     def setDefaultValues(self):
-        self.set("true", "true", 1)
-        self.set("false", "false", 0)
-        self.set("null", "null", 0)
+        self.set("true", "true", Number(1))
+        self.set("false", "false", Number(0))
+        self.set("null", "null", Number(0))
 class SymbolTableEntry:
     def __init__(self, keyword, identifier, value) -> None:
         self.keyword = keyword

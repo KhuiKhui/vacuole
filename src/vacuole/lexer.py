@@ -49,7 +49,7 @@ class Lexer:
             id_str += self.current_char
             self.advance()
         
-        token_type = TT_KEYWORD if id_str in TYPES + CONSTANTS else TT_IDENTIFIER
+        token_type = TT_KEYWORD if id_str in TYPES else TT_IDENTIFIER
         return Token(token_type, id_str, self.pos)
 
 
