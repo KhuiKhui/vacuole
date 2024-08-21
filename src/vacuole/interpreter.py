@@ -14,6 +14,10 @@ class SymbolTable:
         return value
     def set(self, keyword, identifier, value):
         self.symbols[identifier] = SymbolTableEntry(keyword, identifier, value)
+    def setDefaultValues(self):
+        self.set("true", "true", 1)
+        self.set("false", "false", 0)
+        self.set("null", "null", 0)
 class SymbolTableEntry:
     def __init__(self, keyword, identifier, value) -> None:
         self.keyword = keyword
@@ -104,6 +108,10 @@ class Interpreter:
             result = lvalue.and_with(rvalue)
         elif node.op_token.type == TT_OR:
             result = lvalue.or_with(rvalue)
+        elif node.op_token.type == TT_BIT_AND:
+            result = lvalue.bit_and_with(rvalue)
+        elif node.op_token.type == TT_BIT_OR:
+            result = lvalue.bit_or_with(rvalue)
         
         return rt.success(result)
     def visit_UnaryOpNode(self, node):

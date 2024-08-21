@@ -49,7 +49,7 @@ class Lexer:
             id_str += self.current_char
             self.advance()
         
-        token_type = TT_KEYWORD if id_str in KEYWORDS else TT_IDENTIFIER
+        token_type = TT_KEYWORD if id_str in TYPES + CONSTANTS else TT_IDENTIFIER
         return Token(token_type, id_str, self.pos)
 
 
@@ -132,9 +132,8 @@ class Lexer:
                         self.advance()
                         self.advance()
                         continue
-                error_char = self.current_char
+                tokens.append(Token(TT_BIT_AND, "&", self.pos))
                 self.advance()
-                return [], IllegalCharError(error_char, self.pos)
             elif self.current_char == "|":
                 if self.pos.char < len(self.text)-1:
                     if self.text[self.pos.char + 1] == "|":
@@ -142,9 +141,8 @@ class Lexer:
                         self.advance()
                         self.advance()
                         continue
-                error_char = self.current_char
+                tokens.append(Token(TT_BIT_OR, "|", self.pos))
                 self.advance()
-                return [], IllegalCharError(error_char, self.pos)
             else:
                 error_char = self.current_char
                 self.advance()

@@ -52,6 +52,12 @@ class Number:
             return Number(int(self.number or other.number))
     def not_op(self):
         return Number(1 if self.number == 0 else 0)
+    def bit_and_with(self, other):
+        if isinstance(other, Number):
+            return Number(int(self.number & other.number))
+    def bit_or_with(self, other):
+        if isinstance(other, Number):
+            return Number(int(self.number | other.number))
         
     def __repr__(self) -> str:
         return str(self.number)

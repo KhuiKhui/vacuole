@@ -1,5 +1,6 @@
 from vacuole.nodes import *
 from constants.tokens import *
+from constants.text import *
 from vacuole.errors import *
 from vacuole.utils.position import *
 
@@ -83,10 +84,14 @@ class Parser:
 
     def expr(self):
         parseRes = ParseResult()
-        if self.current_token.matches(TT_KEYWORD, "var"):
+        if self.current_token.value in TYPES:
             return self.var_assign()
+        elif self.current_token.value in CONSTANTS:
+            var_token = self.current_token
+            self.advance()
+            return self.var_access(var_token)
         else:
-            return self.bin_op(self.comp_expr, (TT_AND, TT_OR))
+            return self.bin_op(self.comp_expr, (TT_AND, TT_OR, TT_BIT_AND, TT_BIT_OR))
 
     def term(self):
         return self.bin_op(self.factor, (TT_MUL, TT_DIV, TT_MOD, TT_POWER))

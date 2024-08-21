@@ -25,6 +25,7 @@ def run(text, symbol_table):
 
 if __name__ == "__main__":
     symbol_table = SymbolTable()
+    symbol_table.setDefaultValues()
     
     while True:
         text = input("vacuole > ")

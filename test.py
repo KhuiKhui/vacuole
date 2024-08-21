@@ -2,4 +2,4 @@ text = ""
 with open("input.txt", "r") as f:
     text = "".join(f.readlines())
 
-print(True)
+print(1 & 0)
