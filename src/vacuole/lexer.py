@@ -26,7 +26,6 @@ class Lexer:
     def advance(self):
         self.pos.advance(self.current_char)
         self.current_char = self.text[self.pos.char] if self.pos.char < len(self.text) else None
-        #print(self.current_char)
     
     def processIndent(self):
         spaces_until_tab = 0
@@ -67,7 +66,7 @@ class Lexer:
     def tokenize(self):
         tokens = []
         while self.current_char != None:
-            print(f"'{self.current_char}'")
+            #print(f"'{self.current_char}'")
             
             if self.current_char == " " and (len(tokens) == 0 or tokens[-1].type in (TT_NEWLINE, TT_INDENT)):
                 indent_token = self.processIndent()
@@ -78,7 +77,6 @@ class Lexer:
             elif self.current_char == "\n":
                 tokens.append(Token(TT_NEWLINE, "\\n", self.pos))
                 self.advance()
-                print(f"AFTER NEWLINE: '{self.current_char}'")
             elif self.current_char == " ":
                 self.advance()
             elif self.current_char in DIGITS:

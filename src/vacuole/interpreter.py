@@ -60,15 +60,25 @@ class Interpreter:
     def no_visit(self, node):
         raise Exception(f'No visit_{type(node).__name__} method defined')
     
+    def visit_ProgramNode(self, node):
+        rt = RuntimeResult()
+        processes = []
+        for node in node.nodes:
+            processes.append(self.visit(node))
+        return processes
+
     def visit_IfNode(self, node):
         rt = RuntimeResult()
-        cond_result = rt.register(self.visit(node.cases[0]))
-        if rt.error: return rt
-        
-        if cond_result == 1:
-            action = rt.register(self.visit(node.action_nodes[0]))
+        for case in node.cases:
+
+            cond_result = rt.register(self.visit(case["condition"]))
             if rt.error: return rt
-            return rt.success(action)
+            
+            if cond_result == 1:
+                action = rt.register(self.visit(case["action"]))
+                if rt.error: return rt
+                return rt.success(action)
+
         return rt.success(None)
     
     def visit_BinOpNode(self, node):

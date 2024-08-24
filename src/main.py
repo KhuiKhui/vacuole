@@ -36,11 +36,12 @@ def run():
         print(result)
     # Interpreter
     interpreter = Interpreter("input.txt", symbol_table)
-    output = interpreter.visit(result)
-    if output.error:
-        print(output.error)
-    else:
-        print(output.result)
+    program = interpreter.visit(result)
+    for output in program:
+        if output.error:
+            print(output.error)
+        else:
+            print(output.result)
     
 
 if __name__ == "__main__":

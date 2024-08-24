@@ -28,7 +28,6 @@ class Parser:
         self.pos = 0
         self.current_token = self.tokens[self.pos]
         self.indent_level = 0
-        self.parsed_result = []
 
     def advance(self):
         self.pos += 1
@@ -36,13 +35,22 @@ class Parser:
 
     def parse(self):
         parseRes = ParseResult()
-        res = parseRes.register(self.expr())
+        res = parseRes.register(self.program())
         error = parseRes.error
         print(self.current_token.value)
         if not error and self.current_token.type != TT_EOF:
             error = InvalidSyntaxError("Expression with missing terms found.", self.current_token.pos)
 
         return res, error
+    
+    def program(self):
+        parseRes = ParseResult()
+        program_node = ProgramNode()
+        while self.pos < len(self.tokens):
+            node = parseRes.register(self.expr())
+            program_node.addNode(node)
+            self.advance()
+        return program_node
 
     def expr(self):
         parseRes = ParseResult()
@@ -62,6 +70,7 @@ class Parser:
         if self.current_token.type != TT_COLON:
             return parseRes.failure(InvalidSyntaxError("Missing ':'.", self.current_token.pos))
         self.advance()
+        
         while self.current_token.type == TT_NEWLINE:
             self.advance()
         if self.current_token.type != TT_INDENT:
@@ -72,7 +81,7 @@ class Parser:
         action_node = parseRes.register(self.expr())
         if parseRes.error: return parseRes
             
-        return IfNode(self.indent_level).addCase(if_condition_node).addActionNode(action_node)
+        return IfNode(self.indent_level).addCase(if_condition_node, action_node)
 
         
     def cond_expr(self):
