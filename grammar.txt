@@ -1,6 +1,16 @@
+
+
 expr: KEYWORD IDENTIFIER EQ expr
       IDENTIFIER EQ expr
-      comp_expr ((AND|OR|BIT_AND|BIT_OR) comp_expr)
+      
+if_else: if (cond_expr):
+            expr
+         else if (sond_expr):
+            expr
+         else:
+            expr
+
+cond_expr: comp_expr ((AND|OR|BIT_AND|BIT_OR) comp_expr)
       
 comp_expr: NOT comp_expr
            arithmetic_expr ((COMPARISON_OP) arithmetic_expr)

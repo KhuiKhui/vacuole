@@ -11,6 +11,10 @@ class IllegalCharError(Error):
     def __init__(self, details, pos):
         super().__init__('Illegal Character', details, pos)
 
+class IndentationError(Error):
+    def __init__(self, details, pos):
+        super().__init__('Illegal Indentation', details, pos)
+
 class InvalidSyntaxError(Error):
     def __init__(self, details, pos):
         super().__init__('Invalid Syntax', details, pos)

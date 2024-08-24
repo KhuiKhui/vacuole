@@ -27,6 +27,8 @@ class Parser:
         self.tokens = tokens
         self.pos = 0
         self.current_token = self.tokens[self.pos]
+        self.indent_level = 0
+        self.parsed_result = []
 
     def advance(self):
         self.pos += 1
@@ -36,6 +38,7 @@ class Parser:
         parseRes = ParseResult()
         res = parseRes.register(self.expr())
         error = parseRes.error
+        print(self.current_token.value)
         if not error and self.current_token.type != TT_EOF:
             error = InvalidSyntaxError("Expression with missing terms found.", self.current_token.pos)
 
@@ -47,7 +50,32 @@ class Parser:
             return self.var_assign()
         elif self.current_token.type == TT_IDENTIFIER:
             return self.var_update()
+        elif self.current_token.matches(TT_KEYWORD, ["if", "else if", "else"]):
+            return self.if_expr()
+        return self.cond_expr()
+    
+    def if_expr(self):
+        parseRes = ParseResult()
+        self.advance()
+        if_condition_node = parseRes.register(self.expr())
+        if parseRes.error: return parseRes
+        if self.current_token.type != TT_COLON:
+            return parseRes.failure(InvalidSyntaxError("Missing ':'.", self.current_token.pos))
+        self.advance()
+        while self.current_token.type == TT_NEWLINE:
+            self.advance()
+        if self.current_token.type != TT_INDENT:
+            return parseRes.failure(IndentationError("Found lower level of indentation.", self.current_token.pos))
+        self.advance()
+        if self.current_token.type == TT_INDENT:
+            return parseRes.failure(IndentationError("Found higher level of indentation.", self.current_token.pos))
+        action_node = parseRes.register(self.expr())
+        if parseRes.error: return parseRes
+            
+        return IfNode(self.indent_level).addCase(if_condition_node).addActionNode(action_node)
+
         
+    def cond_expr(self):
         return self.bin_op(self.comp_expr, (TT_AND, TT_OR, TT_BIT_AND, TT_BIT_OR))
         
     def bin_op(self, func, ops):
@@ -60,7 +88,7 @@ class Parser:
             self.advance()
             right = parseRes.register(func())
             if parseRes.error: return parseRes
-            left = parseRes.success(BinOpNode(left, op, right))
+            left = parseRes.success(BinOpNode(left, op, right, self.indent_level))
 
         return left
 
@@ -70,7 +98,7 @@ class Parser:
             op_token = self.current_token
             self.advance()
             node = parseRes.register(self.comp_expr())
-            return UnaryOpNode(op_token, node)
+            return UnaryOpNode(op_token, node, self.indent_level)
         node = parseRes.register(self.bin_op(self.arith_expr, COMP_OPS))
         if parseRes.error: return parseRes
         return node
@@ -84,6 +112,8 @@ class Parser:
     def factor(self):
         parseRes = ParseResult()
         token = self.current_token
+        if token.type == TT_INDENT:
+            self.indent_level += 1
         if token.type == TT_IDENTIFIER:
             token_identifier = self.current_token
             self.advance()
@@ -92,7 +122,7 @@ class Parser:
             self.advance()
             factor = parseRes.register(self.factor())
             if parseRes.error: return parseRes
-            return parseRes.register(UnaryOpNode(token, factor))
+            return parseRes.register(UnaryOpNode(token, factor, self.indent_level))
         if token.type == TT_LPAREN:
             self.advance()
             expr = parseRes.register(self.expr())
@@ -105,7 +135,7 @@ class Parser:
 
         if token.type in (TT_INT, TT_FLOAT):
             self.advance()
-            return parseRes.success(NumberNode(token))
+            return parseRes.success(NumberNode(token, self.indent_level))
         
         if self.current_token.type == TT_EOF:
             return parseRes.failure(InvalidSyntaxError(f"Expression with missing terms found.", self.current_token.pos))
@@ -123,7 +153,7 @@ class Parser:
                 self.advance()
                 expr = parseRes.register(self.expr())
                 if parseRes.error: return parseRes
-                return parseRes.success(VarUpdateNode(identifier_token, expr))
+                return parseRes.success(VarUpdateNode(identifier_token, expr, self.indent_level))
             
         return self.bin_op(self.comp_expr, (TT_AND, TT_OR, TT_BIT_AND, TT_BIT_OR))
 
@@ -143,11 +173,11 @@ class Parser:
         self.advance()
         expr = parseRes.register(self.expr())
         if parseRes.error: return parseRes
-        return parseRes.success(VarAssignNode(keyword, identifier_token, expr))
+        return parseRes.success(VarAssignNode(keyword, identifier_token, expr, self.indent_level))
     
     def var_access(self, identifier_token):
         parseRes = ParseResult()
-        return parseRes.success(VarAccessNode(identifier_token))
+        return parseRes.success(VarAccessNode(identifier_token, self.indent_level))
     
     
     

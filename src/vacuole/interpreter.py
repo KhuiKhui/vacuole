@@ -60,33 +60,16 @@ class Interpreter:
     def no_visit(self, node):
         raise Exception(f'No visit_{type(node).__name__} method defined')
     
-    def visit_VarAssignNode(self, node):
+    def visit_IfNode(self, node):
         rt = RuntimeResult()
-        value = rt.register(self.visit(node.node))
+        cond_result = rt.register(self.visit(node.cases[0]))
         if rt.error: return rt
-        self.symbol_table.set(node.keyword, node.identifier_token.value, value)
-        return rt.success(value)
-    
-    def visit_VarUpdateNode(self, node):
-        rt = RuntimeResult()
-        value = rt.register(self.visit(node.node))
-        if rt.error: return rt
-        if self.symbol_table.get(node.identifier_token.value) == None:
-            return rt.failure(RuntimeError(f'{node.identifier_token.value} is not defined.', node.identifier_token.pos))
-        self.symbol_table.update(node.identifier_token.value, value)
-        return rt.success(value)
-    
-    def visit_VarAccessNode(self, node):
-        rt = RuntimeResult()
-        var_value_entry = self.symbol_table.get(node.identifier_token.value)
-        if var_value_entry == None:
-            return rt.failure(RuntimeError(f'{node.identifier_token.value} is not defined.', node.identifier_token.pos))
-        return rt.success(var_value_entry.value)
-
-    def visit_NumberNode(self, node):
-        rt = RuntimeResult()
-        number = Number(node.token.value)
-        return rt.success(number)
+        
+        if cond_result == 1:
+            action = rt.register(self.visit(node.action_nodes[0]))
+            if rt.error: return rt
+            return rt.success(action)
+        return rt.success(None)
     
     def visit_BinOpNode(self, node):
         rt = RuntimeResult()
@@ -140,3 +123,31 @@ class Interpreter:
         if node.op_token.type == TT_NOT:
             result = value.not_op()
         return rt.success(result)
+    
+    def visit_NumberNode(self, node):
+        rt = RuntimeResult()
+        number = Number(node.token.value)
+        return rt.success(number)
+
+    def visit_VarAssignNode(self, node):
+        rt = RuntimeResult()
+        value = rt.register(self.visit(node.node))
+        if rt.error: return rt
+        self.symbol_table.set(node.keyword, node.identifier_token.value, value)
+        return rt.success(value)
+    
+    def visit_VarUpdateNode(self, node):
+        rt = RuntimeResult()
+        value = rt.register(self.visit(node.node))
+        if rt.error: return rt
+        if self.symbol_table.get(node.identifier_token.value) == None:
+            return rt.failure(RuntimeError(f'{node.identifier_token.value} is not defined.', node.identifier_token.pos))
+        self.symbol_table.update(node.identifier_token.value, value)
+        return rt.success(value)
+    
+    def visit_VarAccessNode(self, node):
+        rt = RuntimeResult()
+        var_value_entry = self.symbol_table.get(node.identifier_token.value)
+        if var_value_entry == None:
+            return rt.failure(RuntimeError(f'{node.identifier_token.value} is not defined.', node.identifier_token.pos))
+        return rt.success(var_value_entry.value)
