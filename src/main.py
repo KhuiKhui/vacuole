@@ -37,6 +37,7 @@ def run():
     # Interpreter
     interpreter = Interpreter("input.txt", symbol_table)
     program = interpreter.visit(result)
+    #print("PROGRAM: ", program)
     for output in program:
         if output.error:
             print(output.error)

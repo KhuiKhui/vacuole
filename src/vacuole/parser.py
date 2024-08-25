@@ -2,6 +2,7 @@ from vacuole.nodes import *
 from constants.tokens import *
 from constants.text import *
 from vacuole.errors import *
+from vacuole.lexer import *
 from vacuole.utils.position import *
 
 class ParseResult:
@@ -37,7 +38,6 @@ class Parser:
         parseRes = ParseResult()
         res = parseRes.register(self.program())
         error = parseRes.error
-        print(self.current_token.value)
         if not error and self.current_token.type != TT_EOF:
             error = InvalidSyntaxError("Expression with missing terms found.", self.current_token.pos)
 
@@ -46,10 +46,14 @@ class Parser:
     def program(self):
         parseRes = ParseResult()
         program_node = ProgramNode()
-        while self.pos < len(self.tokens):
+        while self.pos < len(self.tokens) and self.current_token.type != TT_EOF:
+            if self.current_token.type == TT_NEWLINE:
+                self.advance()
+                
             node = parseRes.register(self.expr())
             program_node.addNode(node)
-            self.advance()
+            #print(self.current_token)
+            
         return program_node
 
     def expr(self):
@@ -59,11 +63,59 @@ class Parser:
         elif self.current_token.type == TT_IDENTIFIER:
             return self.var_update()
         elif self.current_token.matches(TT_KEYWORD, ["if", "else if", "else"]):
-            return self.if_expr()
+            return self.if_else_block()
         return self.cond_expr()
     
+    def if_else_block(self):
+        if_block = None
+        if self.current_token.matches(TT_KEYWORD, "if"):
+            if_block = self.if_expr()
+        
+        if if_block != None:
+            if self.current_token.matches(TT_KEYWORD, "else if"):
+                else_if_block = self.if_expr()
+
+                if_block.addCase(else_if_block.cases[0]["condition"], else_if_block.cases[0]["action"])
+            if self.current_token.matches(TT_KEYWORD, "else"):
+                else_block = self.else_expr()
+                if_block.addCase(else_block.cases[0]["condition"], else_block.cases[0]["action"])
+        return if_block
+
+    def else_expr(self):
+        parseRes = ParseResult()
+        if_program_node = ProgramNode()
+        self.advance()
+        if self.current_token.type != TT_COLON:
+            return parseRes.failure(InvalidSyntaxError("Missing ':'.", self.current_token.pos))
+        self.advance()
+        
+        while self.current_token.type == TT_NEWLINE:
+            self.advance()
+        if self.current_token.type != TT_INDENT:
+            return parseRes.failure(IndentationError("Found lower level of indentation.", self.current_token.pos))
+        self.advance()
+        if self.current_token.type == TT_INDENT:
+            return parseRes.failure(IndentationError("Found higher level of indentation.", self.current_token.pos))
+        action_node = parseRes.register(self.expr())
+        if parseRes.error: return parseRes
+        if_program_node.addNode(action_node)
+        while True:
+            while self.current_token.type == TT_NEWLINE:
+                self.advance()
+            if self.current_token.type != TT_INDENT:
+                break
+            self.advance()
+            if self.current_token.type == TT_INDENT:
+                return parseRes.failure(IndentationError("Found higher level of indentation.", self.current_token.pos))
+            action_node = parseRes.register(self.expr())
+            if parseRes.error: return parseRes
+            if_program_node.addNode(action_node)
+            
+        return parseRes.register(IfNode(self.indent_level).addCase(NumberNode(Token(TT_INT, 1, self.current_token.pos), self.indent_level), if_program_node))
+
     def if_expr(self):
         parseRes = ParseResult()
+        if_program_node = ProgramNode()
         self.advance()
         if_condition_node = parseRes.register(self.expr())
         if parseRes.error: return parseRes
@@ -80,8 +132,20 @@ class Parser:
             return parseRes.failure(IndentationError("Found higher level of indentation.", self.current_token.pos))
         action_node = parseRes.register(self.expr())
         if parseRes.error: return parseRes
+        if_program_node.addNode(action_node)
+        while True:
+            while self.current_token.type == TT_NEWLINE:
+                self.advance()
+            if self.current_token.type != TT_INDENT:
+                break
+            self.advance()
+            if self.current_token.type == TT_INDENT:
+                return parseRes.failure(IndentationError("Found higher level of indentation.", self.current_token.pos))
+            action_node = parseRes.register(self.expr())
+            if parseRes.error: return parseRes
+            if_program_node.addNode(action_node)
             
-        return IfNode(self.indent_level).addCase(if_condition_node, action_node)
+        return parseRes.register(IfNode(self.indent_level).addCase(if_condition_node, if_program_node))
 
         
     def cond_expr(self):

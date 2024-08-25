@@ -64,17 +64,21 @@ class Interpreter:
         rt = RuntimeResult()
         processes = []
         for node in node.nodes:
-            processes.append(self.visit(node))
+            outputs = self.visit(node)
+            if isinstance(outputs.result, list):
+                for result in outputs.result:
+                    processes.append(result)
+            else:
+                processes.append(outputs)
         return processes
 
     def visit_IfNode(self, node):
         rt = RuntimeResult()
         for case in node.cases:
-
+            
             cond_result = rt.register(self.visit(case["condition"]))
             if rt.error: return rt
-            
-            if cond_result == 1:
+            if cond_result.number == 1:
                 action = rt.register(self.visit(case["action"]))
                 if rt.error: return rt
                 return rt.success(action)
