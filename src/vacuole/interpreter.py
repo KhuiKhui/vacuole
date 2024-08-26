@@ -125,6 +125,8 @@ class Interpreter:
             result = lvalue.bit_and_with(rvalue)
         elif node.op_token.type == TT_BIT_OR:
             result = lvalue.bit_or_with(rvalue)
+        elif node.op_token.type == TT_BIT_XOR:
+            result = lvalue.bit_xor_with(rvalue)
         
         return rt.success(result)
     def visit_UnaryOpNode(self, node):
@@ -136,6 +138,8 @@ class Interpreter:
             result = value.mul_by(Number(-1))
         if node.op_token.type == TT_NOT:
             result = value.not_op()
+        if node.op_token.type == TT_BIT_NOT:
+            result = value.bit_not_op()
         return rt.success(result)
     
     def visit_NumberNode(self, node):

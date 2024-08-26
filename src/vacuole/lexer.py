@@ -53,14 +53,38 @@ class Lexer:
         else:
             return Token(TT_FLOAT, float(number), self.pos)
         
-    def processVariables(self):
-        id_str = ""
+
+    def processText(self):
+        text = ""
         while self.current_char != None and self.current_char in DIGITS_AND_LETTERS + "_":
-            id_str += self.current_char
+            text += self.current_char
+            
             self.advance()
+        return text
+    
+    def processVariable(self):
+        id_str = self.processText()
         
         token_type = TT_KEYWORD if id_str in TYPES + FUNCTIONS else TT_IDENTIFIER
         return Token(token_type, id_str, self.pos)
+    
+    def processString(self):
+        string = self.processText()
+        
+        return Token(TT_STRING, string, self.pos)
+    
+    def processQuotes(self, starting_quotes=None):
+        cur_quotes = self.current_char
+
+        if starting_quotes != None and starting_quotes != cur_quotes:
+            return [], IllegalCharError(f"Illegal quote placement: {cur_quotes}", self.pos)
+        
+        quotes_type = TT_DOUBLE_QUOTES if cur_quotes == '"' else TT_SINGLE_QUOTES
+        pos = self.pos
+        self.advance()
+        
+        return Token(quotes_type, cur_quotes, pos), None
+    
     
     def mergeElseIfTokens(self):
         if len(self.tokens) < 2:
@@ -90,11 +114,23 @@ class Lexer:
                     self.advance()
             elif self.current_char == " ":
                 self.advance()
+            elif self.current_char == "\"" or self.current_char == "'":
+                opening_quotes, opening_error = self.processQuotes()
+                string_token = self.processString()
+                ending_quotes, ending_error = self.processQuotes(opening_quotes.value)
+                if ending_error != None:
+                    return [], ending_error
+                
+                self.tokens.append(opening_quotes)
+                self.tokens.append(string_token)
+                self.tokens.append(ending_quotes)
+
             elif self.current_char in DIGITS:
                 self.tokens.append(self.processDigits())
             elif self.current_char in LETTERS + "_":
-                self.tokens.append(self.processVariables())
+                self.tokens.append(self.processVariable())
                 self.mergeElseIfTokens()
+            
                 
             elif self.current_char == ">":
                 if self.pos.char < len(self.text)-1:
@@ -176,6 +212,12 @@ class Lexer:
                         self.advance()
                         continue
                 self.tokens.append(Token(TT_BIT_OR, "|", self.pos))
+                self.advance()
+            elif self.current_char == "^":
+                self.tokens.append(Token(TT_BIT_XOR, "^", self.pos))
+                self.advance()
+            elif self.current_char == "~":
+                self.tokens.append(Token(TT_BIT_NOT, "~", self.pos))
                 self.advance()
             elif self.current_char == ":":
                 self.tokens.append(Token(TT_COLON, ":", self.pos))

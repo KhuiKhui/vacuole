@@ -10,18 +10,18 @@ if_else: if (cond_expr):
          else:
             expr
 
-cond_expr: comp_expr ((AND|OR|BIT_AND|BIT_OR) comp_expr)
+cond_expr: comp_expr ((AND|OR) comp_expr)
       
 comp_expr: NOT comp_expr
            arithmetic_expr ((COMPARISON_OP) arithmetic_expr)
 
-arithmetic_expr: term ((PLUS|MINUS) term)*
+arithmetic_expr: term ((PLUS|MINUS|BITWISE_OP) term)*
                  term POWER term
 
 term: fact ((MUL|DIV) fact)*
       fact POWER fact
 
 factor: INT|FLOAT
-        (PLUS|MINUS) factor
+        (PLUS|MINUS|BIT_NOT) factor
         LPAREN expr RPAREN
         IDENTIFIER

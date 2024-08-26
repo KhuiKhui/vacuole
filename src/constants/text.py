@@ -6,5 +6,5 @@ DIGITS_AND_LETTERS = DIGITS + LETTERS
 
 TYPES = ["var"]
 CONSTANTS = ["true", "false", "null"]
-FUNCTIONS = ["if", "else if", "else"]
+FUNCTIONS = ["if", "else if", "else", "for", "while"]
 KEYWORDS = TYPES + CONSTANTS + FUNCTIONS

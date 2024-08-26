@@ -158,7 +158,7 @@ class Parser:
         return parseRes.success(nodes)
         
     def cond_expr(self):
-        return self.bin_op(self.comp_expr, (TT_AND, TT_OR, TT_BIT_AND, TT_BIT_OR))
+        return self.bin_op(self.comp_expr, (TT_AND, TT_OR))
         
     def bin_op(self, func, ops):
         parseRes = ParseResult()
@@ -186,10 +186,10 @@ class Parser:
         return node
     
     def arith_expr(self):
-        return self.bin_op(self.term, (TT_PLUS, TT_MINUS, TT_POWER))
+        return self.bin_op(self.term, (TT_PLUS, TT_MINUS, TT_POWER, TT_BIT_OR, TT_BIT_XOR))
 
     def term(self):
-        return self.bin_op(self.factor, (TT_MUL, TT_DIV, TT_MOD, TT_POWER))
+        return self.bin_op(self.factor, (TT_MUL, TT_DIV, TT_MOD, TT_POWER, TT_BIT_AND))
     
     def factor(self):
         parseRes = ParseResult()
@@ -200,7 +200,7 @@ class Parser:
             token_identifier = self.current_token
             self.advance()
             return self.var_access(token_identifier)
-        if token.type in (TT_PLUS, TT_MINUS): 
+        if token.type in (TT_PLUS, TT_MINUS, TT_BIT_NOT): 
             self.advance()
             factor = parseRes.register(self.factor())
             if parseRes.error: return parseRes
