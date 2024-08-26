@@ -85,31 +85,16 @@ class Parser:
         parseRes = ParseResult()
         if_program_node = ProgramNode()
         self.advance()
-        if self.current_token.type != TT_COLON:
-            return parseRes.failure(InvalidSyntaxError("Missing ':'.", self.current_token.pos))
-        self.advance()
-        
-        while self.current_token.type == TT_NEWLINE:
-            self.advance()
-        if self.current_token.type != TT_INDENT:
-            return parseRes.failure(IndentationError("Found lower level of indentation.", self.current_token.pos))
-        self.advance()
-        if self.current_token.type == TT_INDENT:
-            return parseRes.failure(IndentationError("Found higher level of indentation.", self.current_token.pos))
+
+        parseRes.register(self.is_syntax_correct())
+        if parseRes.error: return parseRes
+
         action_node = parseRes.register(self.expr())
         if parseRes.error: return parseRes
         if_program_node.addNode(action_node)
-        while True:
-            while self.current_token.type == TT_NEWLINE:
-                self.advance()
-            if self.current_token.type != TT_INDENT:
-                break
-            self.advance()
-            if self.current_token.type == TT_INDENT:
-                return parseRes.failure(IndentationError("Found higher level of indentation.", self.current_token.pos))
-            action_node = parseRes.register(self.expr())
-            if parseRes.error: return parseRes
-            if_program_node.addNode(action_node)
+
+        if_program_node = parseRes.register(self.get_subsequent_actions(if_program_node))
+        if parseRes.error: return parseRes
             
         return parseRes.register(IfNode(self.indent_level).addCase(NumberNode(Token(TT_INT, 1, self.current_token.pos), self.indent_level), if_program_node))
 
@@ -117,8 +102,31 @@ class Parser:
         parseRes = ParseResult()
         if_program_node = ProgramNode()
         self.advance()
+
+        if_condition_node = parseRes.register(self.get_condition())
+        if parseRes.error: return parseRes
+
+        parseRes.register(self.is_syntax_correct())
+        if parseRes.error: return parseRes
+
+        action_node = parseRes.register(self.expr())
+        if parseRes.error: return parseRes
+        if_program_node.addNode(action_node)
+
+        if_program_node = parseRes.register(self.get_subsequent_actions(if_program_node))
+        if parseRes.error: return parseRes
+       
+            
+        return parseRes.register(IfNode(self.indent_level).addCase(if_condition_node, if_program_node))
+
+    def get_condition(self):
+        parseRes = ParseResult()
         if_condition_node = parseRes.register(self.expr())
         if parseRes.error: return parseRes
+        return parseRes.success(if_condition_node)
+    
+    def is_syntax_correct(self):
+        parseRes = ParseResult()
         if self.current_token.type != TT_COLON:
             return parseRes.failure(InvalidSyntaxError("Missing ':'.", self.current_token.pos))
         self.advance()
@@ -130,9 +138,11 @@ class Parser:
         self.advance()
         if self.current_token.type == TT_INDENT:
             return parseRes.failure(IndentationError("Found higher level of indentation.", self.current_token.pos))
-        action_node = parseRes.register(self.expr())
-        if parseRes.error: return parseRes
-        if_program_node.addNode(action_node)
+        return parseRes
+    
+    def get_subsequent_actions(self, nodes):
+        parseRes = ParseResult()
+        
         while True:
             while self.current_token.type == TT_NEWLINE:
                 self.advance()
@@ -143,10 +153,9 @@ class Parser:
                 return parseRes.failure(IndentationError("Found higher level of indentation.", self.current_token.pos))
             action_node = parseRes.register(self.expr())
             if parseRes.error: return parseRes
-            if_program_node.addNode(action_node)
-            
-        return parseRes.register(IfNode(self.indent_level).addCase(if_condition_node, if_program_node))
+            nodes.addNode(action_node)
 
+        return parseRes.success(nodes)
         
     def cond_expr(self):
         return self.bin_op(self.comp_expr, (TT_AND, TT_OR, TT_BIT_AND, TT_BIT_OR))
