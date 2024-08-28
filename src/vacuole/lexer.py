@@ -56,7 +56,10 @@ class Lexer:
 
     def processText(self):
         text = ""
+        
         while self.current_char != None and self.current_char in DIGITS_AND_LETTERS + "_":
+            
+            
             text += self.current_char
             
             self.advance()

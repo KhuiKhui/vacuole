@@ -1,4 +1,5 @@
-from vacuole.values.number import Number
+from vacuole.values.number import *
+from vacuole.values.string import *
 from vacuole.errors import *
 from constants.tokens import *
 
@@ -96,10 +97,13 @@ class Interpreter:
         elif node.op_token.type == TT_MINUS:
             result = lvalue.sub_by(rvalue)
         elif node.op_token.type == TT_MUL:
+            if isinstance(lvalue, (String, Number)) and not isinstance(rvalue, Number):
+                return rt.failure(RuntimeError("Illegal multiplication expression.", node.op_token.pos))
+                
             result = lvalue.mul_by(rvalue)
         elif node.op_token.type == TT_DIV:
             if rvalue.number == 0:
-                return rt.failure(RuntimeError("Division by zero", node.op_token.pos))
+                return rt.failure(RuntimeError("Division by zero.", node.op_token.pos))
             result = lvalue.div_by(rvalue)
         elif node.op_token.type == TT_POWER:
             result = lvalue.raise_power(rvalue)
@@ -146,6 +150,11 @@ class Interpreter:
         rt = RuntimeResult()
         number = Number(node.token.value)
         return rt.success(number)
+
+    def visit_StringNode(self, node):
+        rt = RuntimeResult()
+        string = String(node.token.value)
+        return rt.success(string)
 
     def visit_VarAssignNode(self, node):
         rt = RuntimeResult()

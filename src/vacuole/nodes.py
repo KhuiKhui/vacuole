@@ -45,6 +45,13 @@ class NumberNode:
     def __repr__(self) -> str:
         return f'{self.token}'
 
+class StringNode:
+    def __init__(self, token, indent_level) -> None:
+        self.token = token
+        self.indent_level = indent_level
+    def __repr__(self) -> str:
+        return f'{self.token}'
+
 class VarAssignNode:
     def __init__(self, keyword, identifier_token, node, indent_level) -> None:
         self.keyword = keyword

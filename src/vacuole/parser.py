@@ -154,7 +154,6 @@ class Parser:
             action_node = parseRes.register(self.expr())
             if parseRes.error: return parseRes
             nodes.addNode(action_node)
-
         return parseRes.success(nodes)
         
     def cond_expr(self):
@@ -218,7 +217,15 @@ class Parser:
         if token.type in (TT_INT, TT_FLOAT):
             self.advance()
             return parseRes.success(NumberNode(token, self.indent_level))
-        
+        if token.type in (TT_DOUBLE_QUOTES, TT_SINGLE_QUOTES):
+            self.advance()
+            if self.current_token.type == TT_STRING:
+                print(self.current_token)
+                string_token = self.current_token
+                self.advance()
+                self.advance()
+                return parseRes.success(StringNode(string_token, self.indent_level))
+                
         if self.current_token.type == TT_EOF:
             return parseRes.failure(InvalidSyntaxError(f"Expression with missing terms found.", self.current_token.pos))
 
@@ -253,6 +260,7 @@ class Parser:
         if self.current_token.type != TT_EQ:
             return parseRes.failure(InvalidSyntaxError("'=' expected.", self.current_token.pos))
         self.advance()
+        print(self.current_token)
         expr = parseRes.register(self.expr())
         if parseRes.error: return parseRes
         return parseRes.success(VarAssignNode(keyword, identifier_token, expr, self.indent_level))
