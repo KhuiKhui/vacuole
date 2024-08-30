@@ -2,6 +2,9 @@
 
 expr: KEYWORD IDENTIFIER EQ expr
       IDENTIFIER EQ expr
+
+for: for (var_assign; cond_expr; arithmetic_expr):
+         expr
       
 if_else: if (cond_expr):
             expr

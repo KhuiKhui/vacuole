@@ -52,8 +52,6 @@ class Parser:
                 
             node = parseRes.register(self.expr())
             program_node.addNode(node)
-            #print(self.current_token)
-            
         return program_node
 
     def expr(self):
@@ -220,7 +218,6 @@ class Parser:
         if token.type in (TT_DOUBLE_QUOTES, TT_SINGLE_QUOTES):
             self.advance()
             if self.current_token.type == TT_STRING:
-                print(self.current_token)
                 string_token = self.current_token
                 self.advance()
                 self.advance()
@@ -260,7 +257,6 @@ class Parser:
         if self.current_token.type != TT_EQ:
             return parseRes.failure(InvalidSyntaxError("'=' expected.", self.current_token.pos))
         self.advance()
-        print(self.current_token)
         expr = parseRes.register(self.expr())
         if parseRes.error: return parseRes
         return parseRes.success(VarAssignNode(keyword, identifier_token, expr, self.indent_level))

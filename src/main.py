@@ -16,7 +16,7 @@ def parse_input(text, line_number, symbol_table):
     parser = Parser(fn, tokens)
     ast, error = parser.parse()
     if error: return None, error
-    print("AST: ")
+    print("AST: ", ast)
     return ast, error
 
 def run():
@@ -32,12 +32,10 @@ def run():
     if error:
         print(error)
         return
-    else:
-        print(result)
+
     # Interpreter
     interpreter = Interpreter("input.txt", symbol_table)
     program = interpreter.visit(result)
-    #print("PROGRAM: ", program)
     for output in program:
         if output.error:
             print(output.error)

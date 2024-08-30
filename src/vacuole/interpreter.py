@@ -1,6 +1,7 @@
 from vacuole.values.number import *
 from vacuole.values.string import *
 from vacuole.errors import *
+from vacuole.validator import *
 from constants.tokens import *
 
 #rt.failure(RuntimeError(f"{identifier} is not defined.", pos))
@@ -158,8 +159,12 @@ class Interpreter:
 
     def visit_VarAssignNode(self, node):
         rt = RuntimeResult()
+        validator = Validator()
         value = rt.register(self.visit(node.node))
-        if rt.error: return rt
+        if rt.error:
+            return rt
+        if not validator.isValidDataType(node.keyword, value):
+            return rt.failure(TypeError(f"'{value}' incorrectly assigned to type '{node.keyword}'", node.identifier_token.pos))
         self.symbol_table.set(node.keyword, node.identifier_token.value, value)
         return rt.success(value)
     

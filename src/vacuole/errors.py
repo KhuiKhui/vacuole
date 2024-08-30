@@ -22,3 +22,6 @@ class InvalidSyntaxError(Error):
 class RuntimeError(Error):
     def __init__(self, details, pos):
         super().__init__('Runtime Error', details, pos)
+class TypeError(Error):
+    def __init__(self, details, pos):
+        super().__init__('Type Error', details, pos)
