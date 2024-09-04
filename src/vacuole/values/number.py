@@ -21,6 +21,9 @@ class Number(Type):
     def mod(self, other):
         if isinstance(other, Number):
             return Number(self.value % other.value)
+    def get_remainder(self, other):
+        if isinstance(other, Number):
+            return Number(self.value // other.value)
     def is_greater_than(self, other):
         if isinstance(other, Number):
             return Number(int(self.value > other.value))

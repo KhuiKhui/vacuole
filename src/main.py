@@ -22,11 +22,11 @@ def parse_input(text, line_number, symbol_table):
 def run():
     text = ""
     with open("input.txt", "r") as f:
-        text = f.read().strip("\n")
+        text = f.read()
 
     print(text)
     symbol_table = SymbolTable()
-    symbol_table.setDefaultValues()
+    symbol_table.set_default_values()
     
     result, error = parse_input(text, 1, symbol_table)
     if error:

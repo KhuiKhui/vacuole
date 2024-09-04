@@ -3,6 +3,7 @@ from vacuole.values.string import *
 from vacuole.errors import *
 from vacuole.validator import *
 from constants.tokens import *
+from vacuole.nodes import *
 
 #rt.failure(RuntimeError(f"{identifier} is not defined.", pos))
 class SymbolTable:
@@ -19,9 +20,9 @@ class SymbolTable:
     def update(self, identifier, value):
         get_value = self.symbols.get(identifier, None)
         if get_value == None: return None
-        self.symbols[identifier].updateEntry(value)
+        self.symbols[identifier].update_entry(value)
         return value
-    def setDefaultValues(self):
+    def set_default_values(self):
         self.set("true", "true", Number(1))
         self.set("false", "false", Number(0))
         self.set("null", "null", Number(0))
@@ -30,7 +31,7 @@ class SymbolTableEntry:
         self.keyword = keyword
         self.identifier = identifier
         self.value = value
-    def updateEntry(self, new_value):
+    def update_entry(self, new_value):
         self.value = new_value
     
 
@@ -68,23 +69,63 @@ class Interpreter:
         for node in node.nodes:
             outputs = self.visit(node)
             if isinstance(outputs.result, list):
-                for result in outputs.result:
-                    processes.append(result)
+                for output in outputs.result:
+                    if output != None:
+                        processes.append(rt.success(output))
             else:
                 processes.append(outputs)
         return processes
 
     def visit_IfNode(self, node):
         rt = RuntimeResult()
-        for case in node.cases:
-            
+        cases = node.cases
+
+        for case in cases:
             cond_result = rt.register(self.visit(case["condition"]))
             if rt.error: return rt
-            if cond_result.number == 1:
-                action = rt.register(self.visit(case["action"]))
-                if rt.error: return rt
-                return rt.success(action)
 
+            # If cond_result is True
+            if cond_result.value == 1:
+                body = case["body"]
+                body_result = []
+                for i in body:
+                    action = rt.register(self.visit(i))
+                    if rt.error: return rt
+                    if isinstance(action, list):
+                        for j in action:
+                            body_result.append(j)
+                    else:
+                        body_result.append(action)
+                return rt.success(body_result)
+        return rt.success(None)
+    
+    def visit_ForNode(self, node):
+        rt = RuntimeResult()
+        loop = node.loop
+        header = loop["header"]
+        body = loop["body"]
+        
+        iterator = rt.register(self.visit(header["iterator"]))
+        condition = rt.register(self.visit(header["condition"]))
+
+        if rt.error: return rt
+
+        if condition.value == 1:
+            body_result = []
+            subseq_condition = rt.register(self.visit(header["condition"]))
+            if rt.error: return rt
+            while subseq_condition.value == 1:
+                for i in body:
+                    action = rt.register(self.visit(i))
+                    if rt.error: return rt
+                    if isinstance(action, list):
+                        for j in action:
+                            body_result.append(rt.register(j))
+                    else:
+                        body_result.append(rt.register(action))
+                self.visit(header["step"])
+                subseq_condition = rt.register(self.visit(header["condition"]))
+            return rt.success(body_result)
         return rt.success(None)
     
     def visit_BinOpNode(self, node):
@@ -103,13 +144,15 @@ class Interpreter:
                 
             result = lvalue.mul_by(rvalue)
         elif node.op_token.type == TT_DIV:
-            if rvalue.number == 0:
+            if rvalue.value == 0:
                 return rt.failure(RuntimeError("Division by zero.", node.op_token.pos))
             result = lvalue.div_by(rvalue)
         elif node.op_token.type == TT_POWER:
             result = lvalue.raise_power(rvalue)
         elif node.op_token.type == TT_MOD:
             result = lvalue.mod(rvalue)
+        elif node.op_token.type == TT_REMAINDER:
+            result = lvalue.get_remainder(rvalue)
         elif node.op_token.type == TT_GREATER_THAN:
             result = lvalue.is_greater_than(rvalue)
         elif node.op_token.type == TT_GREATER_OR_EQ_TO:
@@ -166,7 +209,7 @@ class Interpreter:
         if not validator.isValidDataType(node.keyword, value):
             return rt.failure(TypeError(f"'{value}' incorrectly assigned to type '{node.keyword}'", node.identifier_token.pos))
         self.symbol_table.set(node.keyword, node.identifier_token.value, value)
-        return rt.success(value)
+        return rt.success(node.identifier_token.value)
     
     def visit_VarUpdateNode(self, node):
         rt = RuntimeResult()
@@ -175,7 +218,7 @@ class Interpreter:
         if self.symbol_table.get(node.identifier_token.value) == None:
             return rt.failure(RuntimeError(f'{node.identifier_token.value} is not defined.', node.identifier_token.pos))
         self.symbol_table.update(node.identifier_token.value, value)
-        return rt.success(value)
+        return rt.success(None)
     
     def visit_VarAccessNode(self, node):
         rt = RuntimeResult()

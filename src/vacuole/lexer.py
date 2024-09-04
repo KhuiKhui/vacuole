@@ -19,16 +19,19 @@ class Token:
 class Lexer:
     def __init__(self, fn, text, line_number):
         self.fn = fn
-        self.text = text
+        self.text = self.clean_input(text)
         self.pos = Position(fn, line_number, 0)
         self.current_char = self.text[0]
         self.tokens = []
+
+    def clean_input(self, text):
+        return text.strip("\n")
         
     def advance(self):
         self.pos.advance(self.current_char)
         self.current_char = self.text[self.pos.char] if self.pos.char < len(self.text) else None
     
-    def processIndent(self):
+    def process_indent(self):
         spaces_until_tab = 0
         while self.current_char == " ":
             spaces_until_tab += 1
@@ -38,7 +41,7 @@ class Lexer:
             self.advance()
         return None
 
-    def processDigits(self):
+    def process_digits(self):
         number = ""
         dot_count = 0
         while self.current_char != None and self.current_char in DIGITS + ".":
@@ -53,23 +56,23 @@ class Lexer:
         else:
             return Token(TT_FLOAT, float(number), self.pos)
 
-    def processText(self):
+    def process_text(self):
         text = ""
         while self.current_char != None and self.current_char in DIGITS_AND_LETTERS + "_":
             text += self.current_char
             self.advance()
         return text
     
-    def processVariable(self):
-        id_str = self.processText()
+    def process_variable(self):
+        id_str = self.process_text()
         token_type = TT_KEYWORD if id_str in TYPES + FUNCTIONS else TT_IDENTIFIER
         return Token(token_type, id_str, self.pos)
     
-    def processString(self):
-        string = self.processText()
+    def process_string(self):
+        string = self.process_text()
         return Token(TT_STRING, string, self.pos)
     
-    def processQuotes(self, starting_quotes=None):
+    def process_quotes(self, starting_quotes=None):
         cur_quotes = self.current_char
         if starting_quotes != None and starting_quotes != cur_quotes:
             return [], IllegalCharError(f"Illegal quote placement: {cur_quotes}", self.pos)
@@ -78,8 +81,10 @@ class Lexer:
         self.advance()
         return Token(quotes_type, cur_quotes, pos), None
     
-    
-    def mergeElseIfTokens(self):
+    def perform_token_merges(self):
+        self.merge_else_if_tokens()
+
+    def merge_else_if_tokens(self):
         if len(self.tokens) < 2:
             return
         if self.tokens[-2].matches(TT_KEYWORD, "else") and self.tokens[-1].matches(TT_KEYWORD, "if"):
@@ -87,11 +92,22 @@ class Lexer:
             self.tokens.pop(-1)
             self.tokens.append(Token(TT_KEYWORD, "else if", self.pos))
 
+    def add_token(self, token_type, token_value, full_token_type=None, second_token_value=None):
+        
+        if self.pos.char < len(self.text)-1 and full_token_type != None and second_token_value != None:
+            if self.text[self.pos.char + 1] == second_token_value:
+                self.tokens.append(Token(full_token_type, token_value + second_token_value, self.pos))
+                self.advance()
+                self.advance()
+                return
+                
+        self.tokens.append(Token(token_type, token_type, self.pos))
+        self.advance()
+
     def tokenize(self):
         while self.current_char != None:        
-
             if self.current_char == " " and (len(self.tokens) == 0 or self.tokens[-1].type in (TT_NEWLINE, TT_INDENT)):
-                indent_token = self.processIndent()
+                indent_token = self.process_indent()
                 if indent_token == None: return [], IndentationError("Vacuole only supports tab indentation.", self.pos)
                 self.advance()
                 self.tokens.append(indent_token)
@@ -107,9 +123,9 @@ class Lexer:
                 self.advance()
 
             elif self.current_char == "\"" or self.current_char == "'":
-                opening_quotes, opening_error = self.processQuotes()
-                string_token = self.processString()
-                ending_quotes, ending_error = self.processQuotes(opening_quotes.value)
+                opening_quotes, opening_error = self.process_quotes()
+                string_token = self.process_string()
+                ending_quotes, ending_error = self.process_quotes(opening_quotes.value)
                 if ending_error != None:
                     return [], ending_error
                 self.tokens.append(opening_quotes)
@@ -117,110 +133,46 @@ class Lexer:
                 self.tokens.append(ending_quotes)
 
             elif self.current_char in DIGITS:
-                self.tokens.append(self.processDigits())
+                self.tokens.append(self.process_digits())
 
             elif self.current_char in LETTERS + "_":
-                self.tokens.append(self.processVariable())
-                self.mergeElseIfTokens()
+                self.tokens.append(self.process_variable())
+                self.perform_token_merges()
             
             elif self.current_char == ">":
-                if self.pos.char < len(self.text)-1:
-                    if self.text[self.pos.char + 1] == "=":
-                        self.tokens.append(Token(TT_GREATER_OR_EQ_TO, ">=", self.pos))
-                        self.advance()
-                        self.advance()
-                        continue
-                self.tokens.append(Token(TT_GREATER_THAN, ">", self.pos))
-                self.advance()
-
+                self.add_token(TT_GREATER_THAN, ">", TT_GREATER_OR_EQ_TO, "=")
             elif self.current_char == "<":
-                if self.pos.char < len(self.text)-1:
-                    if self.text[self.pos.char + 1] == "=":
-                        self.tokens.append(Token(TT_LESS_OR_EQ_TO, "<=", self.pos))
-                        self.advance()
-                        self.advance()
-                        continue
-                self.tokens.append(Token(TT_LESS_THAN, "<", self.pos))
-                self.advance()
-
+                self.add_token(TT_LESS_THAN, "<", TT_LESS_OR_EQ_TO, "=")
             elif self.current_char == "+":
-                self.tokens.append(Token(TT_PLUS, "+", self.pos))
-                self.advance()
-
+                self.add_token(TT_PLUS, "+")
             elif self.current_char == "-":
-                self.tokens.append(Token(TT_MINUS, "-", self.pos))
-                self.advance()
-
+                self.add_token(TT_MINUS, "-")
             elif self.current_char == "*":
-                if self.pos.char < len(self.text)-1:
-                    if self.text[self.pos.char + 1] == "*":
-                        self.tokens.append(Token(TT_POWER, "**", self.pos))
-                        self.advance()
-                        self.advance()
-                        continue
-                self.tokens.append(Token(TT_MUL, "*", self.pos))
-                self.advance()
-                
+                self.add_token(TT_MUL, "*", TT_POWER, "*")
             elif self.current_char == "/":
-                self.tokens.append(Token(TT_DIV, "/", self.pos))
-                self.advance()
+                self.add_token(TT_DIV, "/", TT_REMAINDER, "/")
             elif self.current_char == "%":
-                self.tokens.append(Token(TT_MOD, "%", self.pos))
-                self.advance()
+                self.add_token(TT_MOD, "%")
             elif self.current_char == "(":
-                self.tokens.append(Token(TT_LPAREN, "(", self.pos))
-                self.advance()
+                self.add_token(TT_LPAREN, "(")
             elif self.current_char == ")":
-                self.tokens.append(Token(TT_RPAREN, ")", self.pos))
-                self.advance()
+                self.add_token(TT_RPAREN, ")")
             elif self.current_char == "=":
-                if self.pos.char < len(self.text)-1:
-                    if self.text[self.pos.char + 1] == "=":
-                        self.tokens.append(Token(TT_EQ_TO, "==", self.pos))
-                        self.advance()
-                        self.advance()
-                        continue
-                self.tokens.append(Token(TT_EQ, "=", self.pos))
-                self.advance()
+                self.add_token(TT_EQ, "=", TT_EQ_TO, "=")
             elif self.current_char == "!":
-                if self.pos.char < len(self.text)-1:
-                    if self.text[self.pos.char + 1] == "=":
-                        self.tokens.append(Token(TT_NOT_EQ_TO, "!=", self.pos))
-                        self.advance()
-                        self.advance()
-                        continue
-                self.tokens.append(Token(TT_NOT, "!", self.pos))
-                self.advance()
+                self.add_token(TT_NOT, "!", TT_NOT_EQ_TO, "=")
             elif self.current_char == "&":
-                if self.pos.char < len(self.text)-1:
-                    if self.text[self.pos.char + 1] == "&":
-                        self.tokens.append(Token(TT_AND, "&&", self.pos))
-                        self.advance()
-                        self.advance()
-                        continue
-                self.tokens.append(Token(TT_BIT_AND, "&", self.pos))
-                self.advance()
+                self.add_token(TT_BIT_AND, "&", TT_AND, "&")
             elif self.current_char == "|":
-                if self.pos.char < len(self.text)-1:
-                    if self.text[self.pos.char + 1] == "|":
-                        self.tokens.append(Token(TT_OR, "||", self.pos))
-                        self.advance()
-                        self.advance()
-                        continue
-                self.tokens.append(Token(TT_BIT_OR, "|", self.pos))
-                self.advance()
+                self.add_token(TT_BIT_OR, "|", TT_OR, "|")
             elif self.current_char == "^":
-                self.tokens.append(Token(TT_BIT_XOR, "^", self.pos))
-                self.advance()
+                self.add_token(TT_BIT_XOR, "^")
             elif self.current_char == "~":
-                self.tokens.append(Token(TT_BIT_NOT, "~", self.pos))
-                self.advance()
+                self.add_token(TT_BIT_NOT, "~")
             elif self.current_char == ":":
-                self.tokens.append(Token(TT_COLON, ":", self.pos))
-                self.advance()
+                self.add_token(TT_COLON, ":")
             elif self.current_char == ";":
-                self.tokens.append(Token(TT_SEMI_COLON, ";", self.pos))
-                self.advance()
+                self.add_token(TT_SEMI_COLON, ";")
             else:
                 error_char = self.current_char
                 self.advance()

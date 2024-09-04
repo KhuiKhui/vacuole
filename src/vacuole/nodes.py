@@ -10,17 +10,38 @@ class ProgramNode:
 
 class IfNode:
     def __init__(self, indent_level) -> None:
-        self.cases = []
+        self.cases = [] # Must be list because there are else if and else cases too
         self.indent_level = indent_level
     def __repr__(self) -> str:
-        return f'{self.cases}'
-    def addCase(self, condition, action):
-        self.cases.append({
-            'condition': condition,
-            'action': action
-        })
+        return f'IF: {self.cases}'
+    def add_body(self, condition, body):
+        case = {'condition': None, 'body': []}
+        case['condition'] = condition
+        if isinstance(body, list):
+            for i in body:
+                case["body"].append(i)
+        else:
+            case["body"].append(body)
+        self.cases.append(case)
         return self
 
+class ForNode:
+    def __init__(self, indent_level) -> None:
+        self.loop = {'header': {'iterator': None, 'condition': None, 'step': None}, 'body': []}
+        self.indent_level = indent_level
+    def __repr__(self) -> str:
+        return f"FOR: {self.loop}"
+    def add_body(self, iterator, condition, step, body):
+        self.loop['header']['iterator'] = iterator
+        self.loop['header']['condition'] = condition
+        self.loop['header']['step'] = step
+
+        if isinstance(body, list):
+            for i in body:
+                self.loop["body"].append(i)
+        else:
+            self.loop["body"].append(body)
+        return self
 class BinOpNode:
     def __init__(self, lnode, op_token, rnode, indent_level) -> None:
         self.op_token = op_token
