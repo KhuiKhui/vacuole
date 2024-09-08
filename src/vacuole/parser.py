@@ -152,17 +152,18 @@ class Parser:
             
             step = parseRes.register(self.expr())
             if parseRes.error: return parseRes
-            
 
             if self.current_token.type == TT_RPAREN:
 
                 self.advance()
                 parseRes.register(self.is_syntax_correct())
                 if parseRes.error: return parseRes
-                
-                body_program_node = parseRes.register(self.get_bodies(self.indent_level))
-                if parseRes.error: return parseRes
 
+                indent = self.indent_level        
+                print(indent, self.current_token)
+                body_program_node = parseRes.register(self.get_bodies(indent))
+                if parseRes.error: return parseRes
+                print("BODY: ", body_program_node)
                 return parseRes.register(ForNode(self.indent_level).add_body(iterator, condition, step, body_program_node.nodes))
 
     def is_separator_correct(self):
@@ -197,7 +198,8 @@ class Parser:
         body_node = parseRes.register(self.expr())
         if parseRes.error: return parseRes
         program_node.addNode(body_node)
-        
+        print("IN BODIES: ", body_node, self.current_token)
+        print(indent)
         while True:
             if self.pos + indent >= len(self.tokens) or self.tokens[self.pos + indent].type != TT_INDENT:
                 break
@@ -205,6 +207,9 @@ class Parser:
                 self.advance()
             
             self.advance()
+            body_node = parseRes.register(self.expr())
+            if parseRes.error: return parseRes
+            program_node.addNode(body_node)
         return parseRes.success(program_node)
         
     def cond_expr(self):
@@ -250,10 +255,17 @@ class Parser:
             token_identifier = self.current_token
             self.advance()
             return self.var_access(token_identifier)
+        # PREFIX
         if token.type in (TT_PLUS, TT_MINUS, TT_BIT_NOT): 
             self.advance()
             factor = parseRes.register(self.factor())
             if parseRes.error: return parseRes
+            return parseRes.register(UnaryOpNode(token, factor, self.indent_level))
+        # POSTFIX
+        if token.type in (TT_PLUS_PLUS): 
+            factor = parseRes.register(self.factor())
+            if parseRes.error: return parseRes
+            self.advance()
             return parseRes.register(UnaryOpNode(token, factor, self.indent_level))
         if token.type == TT_LPAREN:
             self.advance()
@@ -285,15 +297,18 @@ class Parser:
         
         identifier_token = self.current_token
         
-        if self.pos < len(self.tokens) - 1:
-            if self.tokens[self.pos + 1].type == TT_EQ:
-                self.advance()
-                self.advance()
-                expr = parseRes.register(self.expr())
+        if self.pos < len(self.tokens) - 1 and self.tokens[self.pos + 1].type in ASSIGNMENT_OPS + POSTFIX_UNARY + (TT_EQ,):
+            self.advance()
+            update_token = self.current_token
+            self.advance()
+            if update_token.type in ASSIGNMENT_OPS + (TT_EQ,):
+                expr = parseRes.register(self.bin_op(self.comp_expr, (TT_AND, TT_OR)))
                 if parseRes.error: return parseRes
-                return parseRes.register(VarUpdateNode(identifier_token, expr, self.indent_level))
-            
-        return self.bin_op(self.comp_expr, (TT_AND, TT_OR, TT_BIT_AND, TT_BIT_OR))
+                return parseRes.register(VarUpdateNode(identifier_token, expr, self.indent_level).add_update_token(update_token))
+            if update_token.type in POSTFIX_UNARY:
+                return parseRes.register(VarUpdateNode(identifier_token, NumberNode(Token(TT_INT, 1, self.current_token.pos), self.indent_level), self.indent_level).add_update_token(update_token))    
+
+        return self.bin_op(self.comp_expr, (TT_AND, TT_OR))
 
     def var_assign(self):
         parseRes = ParseResult()

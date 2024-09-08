@@ -57,7 +57,7 @@ class UnaryOpNode:
         self.node = node
         self.indent_level = indent_level
     def __repr__(self) -> str:
-        return f'({self.op_token} {self.node})'
+        return f'({self.op_token} {self.node}) | ({self.node} {self.op_token})'
     
 class NumberNode:
     def __init__(self, token, indent_level) -> None:
@@ -87,8 +87,12 @@ class VarUpdateNode:
         self.identifier_token = identifier_token
         self.node = node
         self.indent_level = indent_level
+        self.update_token = None
     def __repr__(self) -> str:
-        return f'{self.identifier_token} = {self.node}'
+        return f'{self.identifier_token} {self.update_token} {self.node}'
+    def add_update_token(self, update_token):
+        self.update_token = update_token
+        return self
     
 class VarAccessNode:
     def __init__(self, identifier_token, indent_level) -> None:

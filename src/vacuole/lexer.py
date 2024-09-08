@@ -92,17 +92,20 @@ class Lexer:
             self.tokens.pop(-1)
             self.tokens.append(Token(TT_KEYWORD, "else if", self.pos))
 
-    def add_token(self, token_type, token_value, full_token_type=None, second_token_value=None):
+        
+    def add_token(self, token_type, token_value, full_token_type=None, second_token_value=None, strict=False):
         
         if self.pos.char < len(self.text)-1 and full_token_type != None and second_token_value != None:
             if self.text[self.pos.char + 1] == second_token_value:
                 self.tokens.append(Token(full_token_type, token_value + second_token_value, self.pos))
                 self.advance()
                 self.advance()
+                
                 return
                 
-        self.tokens.append(Token(token_type, token_type, self.pos))
-        self.advance()
+        if not strict:
+            self.tokens.append(Token(token_type, token_type, self.pos))
+            self.advance()
 
     def tokenize(self):
         while self.current_char != None:        
@@ -144,12 +147,20 @@ class Lexer:
             elif self.current_char == "<":
                 self.add_token(TT_LESS_THAN, "<", TT_LESS_OR_EQ_TO, "=")
             elif self.current_char == "+":
-                self.add_token(TT_PLUS, "+")
+                self.add_token(TT_PLUS, "+", TT_PLUS_PLUS, "+", True)
+                self.add_token(TT_PLUS, "+", TT_PLUS_ASSIGN, "=", True)
+                if self.current_char == "+":
+                    self.add_token(TT_PLUS, "+")
             elif self.current_char == "-":
-                self.add_token(TT_MINUS, "-")
+                self.add_token(TT_MINUS, "-", TT_MINUS, "-", True)
+                self.add_token(TT_MINUS, "-", TT_MINUS_ASSIGN, "=", True)
+                if self.current_char == "-":
+                    self.add_token(TT_MINUS, "-")
             elif self.current_char == "*":
+                self.add_token(TT_MUL, "*", TT_MUL_ASSIGN, "=", True)
                 self.add_token(TT_MUL, "*", TT_POWER, "*")
             elif self.current_char == "/":
+                self.add_token(TT_DIV, "/", TT_DIV_ASSIGN, "=", True)
                 self.add_token(TT_DIV, "/", TT_REMAINDER, "/")
             elif self.current_char == "%":
                 self.add_token(TT_MOD, "%")

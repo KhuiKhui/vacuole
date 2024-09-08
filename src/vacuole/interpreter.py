@@ -2,6 +2,7 @@ from vacuole.values.number import *
 from vacuole.values.string import *
 from vacuole.errors import *
 from vacuole.validator import *
+from vacuole.assigner import *
 from constants.tokens import *
 from vacuole.nodes import *
 
@@ -204,8 +205,7 @@ class Interpreter:
         rt = RuntimeResult()
         validator = Validator()
         value = rt.register(self.visit(node.node))
-        if rt.error:
-            return rt
+        if rt.error: return rt
         if not validator.isValidDataType(node.keyword, value):
             return rt.failure(TypeError(f"'{value}' incorrectly assigned to type '{node.keyword}'", node.identifier_token.pos))
         self.symbol_table.set(node.keyword, node.identifier_token.value, value)
@@ -213,11 +213,29 @@ class Interpreter:
     
     def visit_VarUpdateNode(self, node):
         rt = RuntimeResult()
-        value = rt.register(self.visit(node.node))
+        identifier = node.identifier_token.value
+        if self.symbol_table.get(identifier) == None:
+            return rt.failure(RuntimeError(f'{identifier} is not defined.', node.identifier_token.pos))
+
+        base_value = self.symbol_table.get(identifier).value
+        
+        updated_value = rt.register(self.visit(node.node))
         if rt.error: return rt
-        if self.symbol_table.get(node.identifier_token.value) == None:
-            return rt.failure(RuntimeError(f'{node.identifier_token.value} is not defined.', node.identifier_token.pos))
-        self.symbol_table.update(node.identifier_token.value, value)
+        if node.update_token.type in ASSIGNMENT_OPS:
+            if node.update_token.type == TT_PLUS_ASSIGN:
+                updated_value = base_value.add_to(updated_value)
+            if node.update_token.type == TT_MINUS_ASSIGN:
+                updated_value = base_value.sub_by(updated_value)
+            if node.update_token.type == TT_MUL_ASSIGN:
+                updated_value = base_value.mul_by(updated_value)
+            if node.update_token.type == TT_DIV_ASSIGN:
+                updated_value = base_value.div_by(updated_value)
+        if node.update_token.type in POSTFIX_UNARY:
+            if node.update_token.type == TT_PLUS_PLUS:
+                updated_value = base_value.add_to(updated_value)
+            if node.update_token.type == TT_MINUS_MINUS:
+                updated_value = base_value.sub_by(updated_value)
+        self.symbol_table.update(node.identifier_token.value, updated_value)
         return rt.success(None)
     
     def visit_VarAccessNode(self, node):
